@@ -1,0 +1,10 @@
+﻿{
+  "schema": 2,
+  "sources": [
+    {
+      "repo": "aaron7357357/PCL-Max",
+      "tier": "official",
+      "weight": 100
+    }
+  ]
+}
