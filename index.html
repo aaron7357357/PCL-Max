@@ -522,21 +522,24 @@
     var seen = {};
     var stats = { files: inputs.length, lines: 0, errors: 0, warns: 0 };
     var kinds = [];
-    var version = '', os = '', dpi = '', mcVersion = '', javaVersion = '', modCount = 0;
+    var version = '', os = '', dpi = '', mcVersion = '', javaVersion = '', modCount = 0, gpuName = '';
 
     for (var i = 0; i < inputs.length; i++) {
       var inp = inputs[i];
       if (kinds.indexOf(inp.kind) < 0) kinds.push(inp.kind);
 
       var r = analyzeOne(inp.text, inp.kind);
-      stats.lines += r.lines;
-      stats.errors += r.errors;
-      stats.warns += r.warns;
+      // analyzeOne 把行数等都放在 stats 里，这里要往下取一层；
+      // 直接 r.lines 拿到的是 undefined，累加后会变成 NaN
+      stats.lines += r.stats.lines || 0;
+      stats.errors += r.stats.errors || 0;
+      stats.warns += r.stats.warns || 0;
       if (r.version && !version) version = r.version;
       if (r.os && !os) os = r.os;
       if (r.dpi && !dpi) dpi = r.dpi;
       if (r.mcVersion && !mcVersion) mcVersion = r.mcVersion;
       if (r.javaVersion && !javaVersion) javaVersion = r.javaVersion;
+      if (r.gpuName && !gpuName) gpuName = r.gpuName;
       if (r.modCount) modCount = Math.max(modCount, r.modCount);
 
       for (var k = 0; k < r.findings.length; k++) {
@@ -552,7 +555,7 @@
       stats: stats,
       kinds: kinds,
       version: version, os: os, dpi: dpi,
-      mcVersion: mcVersion, javaVersion: javaVersion, modCount: modCount
+      mcVersion: mcVersion, javaVersion: javaVersion, modCount: modCount, gpuName: gpuName
     };
   }
 
@@ -692,15 +695,26 @@
     var version = (text.match(/PCL_Max\s+([\d.]+\S*)/) || [])[1] || '';
     var os = (text.match(/系统版本：([^\r\n]+)/) || [])[1] || '';
     var dpi = (text.match(/DPI：(\d+)/) || [])[1] || '';
-    var mcVersion = (text.match(/(?:Minecraft Version|--fml\.mcVersion|Loading Minecraft)\D*?([\d.]+)/i) || [])[1] || '';
-    var javaVersion = (text.match(/(?:Java Version|java\.version|JVM version)[:=]\s*([\d._]+)/i) || [])[1] || '';
+
+    // Forge / NeoForge 把关键信息写在启动横幅里，格式固定，直接抓
+    var mcVersion = (text.match(/--fml\.mcVersion,\s*([\d.]+)/) || [])[1]
+      || (text.match(/(?:Minecraft Version|Loading Minecraft)\D*?([\d.]+)/i) || [])[1]
+      || '';
+    var javaVersion = (text.match(/java version ([\d._]+) by/i) || [])[1]
+      || (text.match(/(?:Java Version|java\.version|JVM version)[:=]\s*([\d._]+)/i) || [])[1]
+      || '';
     var modCount = (text.match(/(\d+)\s+mods? loaded/i) || [])[1] || '';
+
+    // 显卡型号：EARLYDISPLAY 会打一行 GL info，抓 GTX/RTX/RX 之类
+    var gpuName = (text.match(/GL info:\s*([^/\r\n]+)/i) || [])[1] || '';
+    if (gpuName) gpuName = gpuName.trim();
 
     return {
       findings: findings, stats: stats,
       version: version, os: os.trim(), dpi: dpi,
       mcVersion: mcVersion, javaVersion: javaVersion,
-      modCount: modCount ? parseInt(modCount, 10) : 0
+      modCount: modCount ? parseInt(modCount, 10) : 0,
+      gpuName: gpuName
     };
   }
 
@@ -740,6 +754,7 @@
     if (r.version) meta.push('启动器 ' + r.version);
     if (r.mcVersion) meta.push('MC ' + r.mcVersion);
     if (r.javaVersion) meta.push('Java ' + r.javaVersion);
+    if (r.gpuName) meta.push(r.gpuName);
     if (r.modCount) meta.push(r.modCount + ' 个模组');
     if (r.os) meta.push(r.os);
     if (r.dpi) meta.push('DPI ' + r.dpi);
