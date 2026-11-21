@@ -121,6 +121,8 @@
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="10" />
                             <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="10" />
+                            <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="29" />
@@ -141,6 +143,9 @@
                         <local:MyButton x:Name="BtnChangelog" Text="{DynamicResource Setup.Update.Changelog.View}" ColorType="Normal" Grid.Row="0"
                                         Grid.RowSpan="2" Grid.Column="5" HorizontalAlignment="Stretch" MinWidth="100"
                                         VerticalAlignment="Stretch" Click="BtnChangelog_Click" />
+                        <local:MyButton x:Name="BtnOfficialSite" Text="{DynamicResource Setup.Update.OfficialSite}" ColorType="Normal" Grid.Row="0"
+                                        Grid.RowSpan="2" Grid.Column="7" HorizontalAlignment="Stretch" MinWidth="80"
+                                        VerticalAlignment="Stretch" Click="BtnOfficialSite_Click" />
                     </Grid>
                 </StackPanel>
             </local:MyCard>

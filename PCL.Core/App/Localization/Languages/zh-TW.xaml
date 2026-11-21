@@ -3267,6 +3267,7 @@
     <sys:String x:Key="Setup.Update.Changelog.Title">關於此更新</sys:String>
     <sys:String x:Key="Setup.Update.Changelog.Unavailable">沒有可用的更新紀錄...</sys:String>
     <sys:String x:Key="Setup.Update.Changelog.View">檢視更新紀錄</sys:String>
+    <sys:String x:Key="Setup.Update.OfficialSite">官網</sys:String>
     <sys:String x:Key="Setup.Update.CheckAgain">再次檢查</sys:String>
     <sys:String x:Key="Setup.Update.CheckFailed">檢查更新時出錯</sys:String>
     <sys:String x:Key="Setup.Update.Checking">正在檢查更新...</sys:String>

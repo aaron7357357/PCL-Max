@@ -359,6 +359,19 @@ public partial class PageSetupUpdate
         ModBase.OpenWebsite(ProjectLinks.Releases + "/tag/v" + ModBase.versionBaseName);
     }
 
+    /// <summary>打开官网。站内有下载、更新日志与日志分析工具。</summary>
+    private void BtnOfficialSite_Click(object sender, MouseButtonEventArgs e)
+    {
+        try
+        {
+            ModBase.OpenWebsite(ProjectLinks.Website);
+        }
+        catch (Exception ex)
+        {
+            ModBase.Log(ex, "打开官网失败", ModBase.LogLevel.Debug);
+        }
+    }
+
     public string VersionNameFormat(string str)
     {
         str = str.Replace("v", "");

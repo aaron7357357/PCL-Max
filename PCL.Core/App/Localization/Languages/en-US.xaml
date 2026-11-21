@@ -3324,6 +3324,7 @@ You can open Mod Management first, or launch anyway (this may crash the game).</
     <sys:String x:Key="Setup.Update.Changelog.Title">About this update</sys:String>
     <sys:String x:Key="Setup.Update.Changelog.Unavailable">No changelog available...</sys:String>
     <sys:String x:Key="Setup.Update.Changelog.View">Full changelog</sys:String>
+    <sys:String x:Key="Setup.Update.OfficialSite">Website</sys:String>
     <sys:String x:Key="Setup.Update.CheckAgain">Check again</sys:String>
     <sys:String x:Key="Setup.Update.CheckFailed">Failed to check for updates</sys:String>
     <sys:String x:Key="Setup.Update.Checking">Checking for updates...</sys:String>

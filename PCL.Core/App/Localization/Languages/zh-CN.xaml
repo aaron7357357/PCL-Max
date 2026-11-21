@@ -3324,6 +3324,7 @@
     <sys:String x:Key="Setup.Update.Changelog.Title">关于此更新</sys:String>
     <sys:String x:Key="Setup.Update.Changelog.Unavailable">没有可用的更新日志...</sys:String>
     <sys:String x:Key="Setup.Update.Changelog.View">查看更新日志</sys:String>
+    <sys:String x:Key="Setup.Update.OfficialSite">官网</sys:String>
     <sys:String x:Key="Setup.Update.CheckAgain">再次检查</sys:String>
     <sys:String x:Key="Setup.Update.CheckFailed">检查更新时出错</sys:String>
     <sys:String x:Key="Setup.Update.Checking">正在检查更新...</sys:String>

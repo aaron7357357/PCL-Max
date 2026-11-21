@@ -91,6 +91,11 @@ public static class ProjectLinks
 
     public static string Wiki => $"{Repository}/wiki";
 
+    /// <summary>
+    ///     官网地址。站点源码在仓库的 <c>site/</c> 目录，通过 GitHub Pages 发布。
+    /// </summary>
+    public static string Website => $"https://{GitHubOwner.ToLowerInvariant()}.github.io/{GitHubRepo}/";
+
     /// <summary>GitHub API：仓库的 release 列表。</summary>
     public static string ReleasesApi => $"https://api.github.com/repos/{GitHubOwner}/{GitHubRepo}/releases";
 
