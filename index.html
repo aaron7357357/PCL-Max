@@ -84,21 +84,6 @@
   .card h3 { margin: 0 0 9px; font-size: 16px; font-weight: 600; }
   .card p { margin: 0; color: var(--dim); font-size: 14.5px; line-height: 1.7; }
   .card .ico { font-size: 21px; margin-bottom: 12px; display: block; }
-
-  /* ── 服务器状态 ── */
-  .status {
-    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-    padding: 18px 22px; border-radius: 13px;
-    background: var(--card); border: 1px solid var(--line);
-  }
-  .dot {
-    width: 10px; height: 10px; border-radius: 50%; background: #5a6675; flex: none;
-  }
-  .dot.online { background: var(--green); box-shadow: 0 0 0 4px rgba(63,185,80,.16); }
-  .dot.offline { background: #d9534f; box-shadow: 0 0 0 4px rgba(217,83,79,.16); }
-  .status .name { font-weight: 600; }
-  .status .meta { color: var(--dim); font-size: 14px; }
-
   /* ── 版本列表 ── */
   .rel { border: 1px solid var(--line); border-radius: 13px; overflow: hidden; }
   .rel-row {
@@ -236,18 +221,6 @@
         <h3>自动更新</h3>
         <p>内置更新链路，正式版与测试版分通道发布。装了就不用再手动下新版。</p>
       </div>
-    </div>
-  </div>
-</section>
-
-<section style="padding-top:0">
-  <div class="wrap">
-    <h2>服务器状态</h2>
-    <p class="sub">IMC.RE —— 实时查询，每 30 秒刷新。</p>
-    <div class="status" id="status">
-      <span class="dot" id="dot"></span>
-      <span class="name">play.imc.re</span>
-      <span class="meta" id="statusText">正在查询…</span>
     </div>
   </div>
 </section>
@@ -609,31 +582,6 @@
     result.hidden = false;
     result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
-})();
-
-(function () {
-  var host = 'play.imc.re';
-  fetch('https://api.mcsrvstat.us/3/' + host)
-    .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
-    .then(function (d) {
-      var dot = document.getElementById('dot');
-      var text = document.getElementById('statusText');
-      if (!d || !d.online) {
-        dot.className = 'dot offline';
-        text.textContent = '离线';
-        return;
-      }
-      dot.className = 'dot online';
-      var parts = ['在线'];
-      if (d.players && typeof d.players.online === 'number') {
-        parts.push(d.players.online + ' / ' + (d.players.max || '?') + ' 人');
-      }
-      if (d.version) parts.push('版本 ' + d.version);
-      text.textContent = parts.join(' · ');
-    })
-    .catch(function () {
-      document.getElementById('statusText').textContent = '查询失败';
-    });
 })();
 </script>
 </body>
