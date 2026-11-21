@@ -1,4 +1,4 @@
-﻿using PCL.Pages.PageLink;
+using PCL.Pages.PageLink;
 using System.ComponentModel;
 using System.IO;
 using System.Net;
@@ -299,7 +299,10 @@ public partial class FormMain
                         userSummary: Lang.Text("Main.Error.OperationFailed"));
                 }
 
-                HardwareInfo.GetHardwareInfo();
+                // 硬件信息只用于「软件信息」页展示，跟启动流程无关。
+                // WMI 首次查询要拉起 Winmgmt 服务，实测 1 秒以上，同步调用会让欢迎页
+                // 白白多转一圈——改成后台跑，谁需要谁去读结果。
+                HardwareInfo.GetHardwareInfoInBackground();
             }
             catch (Exception ex)
             {

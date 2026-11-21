@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
@@ -180,16 +181,17 @@ public partial class PageWelcome
         cpuRow.Margin = new Thickness(0, 22, 0, 0);
         panel.Children.Add(cpuRow);
 
-        var ramRow = _BuildMetricRow("内存占用", out var ramValue, out var ramFill, out var ramTrack);
-        ramRow.Margin = new Thickness(0, 14, 0, 0);
-        panel.Children.Add(ramRow);
-
         // GPU 使用率：靠性能计数器，某些驱动不提供这组计数器，取不到时把整行隐藏，
         // 而不是显示一个永远 0% 的假数据
         var gpuRow = _BuildMetricRow("GPU 使用率", out var gpuValue, out var gpuFill, out var gpuTrack);
         gpuRow.Margin = new Thickness(0, 14, 0, 0);
         gpuRow.Visibility = Visibility.Collapsed;
         panel.Children.Add(gpuRow);
+
+        // 内存放最后：它的数字是「已用 X / Y GB」，紧跟一行明细读起来更顺
+        var ramRow = _BuildMetricRow("内存占用", out var ramValue, out var ramFill, out var ramTrack);
+        ramRow.Margin = new Thickness(0, 14, 0, 0);
+        panel.Children.Add(ramRow);
 
         var detail = _Text("", 11, false);
         detail.Margin = new Thickness(0, 14, 0, 0);
@@ -205,7 +207,6 @@ public partial class PageWelcome
         var cpuShown = 0d;
         var ramShown = 0d;
         var gpuShown = 0d;
-        var gpuProbed = false;
         var gpuSupported = false;
 
         void Update()
@@ -243,14 +244,22 @@ public partial class PageWelcome
 
             // GPU 只在第一次成功取到值后才把行露出来；之后取不到就保持上一次的数字，
             // 避免因为某个瞬间计数器为空导致行忽隐忽现
-            if (!gpuProbed || gpuSupported)
+            if (!gpuSupported)
             {
                 var gpu = _ReadGpuUsage();
-                gpuProbed = true;
                 if (gpu >= 0d)
                 {
                     gpuSupported = true;
                     gpuRow.Visibility = Visibility.Visible;
+                    gpuValue.Text = $"{gpu:0}%";
+                    AnimateBarWidth(gpuFill, gpuTrack, gpu, ref gpuShown);
+                }
+            }
+            else
+            {
+                var gpu = _ReadGpuUsage();
+                if (gpu >= 0d)
+                {
                     gpuValue.Text = $"{gpu:0}%";
                     AnimateBarWidth(gpuFill, gpuTrack, gpu, ref gpuShown);
                 }
@@ -374,6 +383,16 @@ public partial class PageWelcome
     private static string FormatGb(ulong bytes) => $"{bytes / 1024d / 1024d / 1024d:0.0} GB";
 
     /// <summary>
+    ///     GPU 计数器实例缓存：实例名 → 计数器。
+    ///     <para>
+    ///     <b>必须跨调用复用</b>。<c>PerformanceCounter.NextValue()</c> 算的是「两次采样之间的平均值」，
+    ///     同一次调用里连着调两下，间隔只有几微秒，分母接近 0，结果永远是 0 或离谱的数值。
+    ///     正确做法是上一轮调用先 <c>NextValue()</c> 播种，下一轮（1 秒后）再取才准。
+    ///     </para>
+    /// </summary>
+    private static readonly Dictionary<string, PerformanceCounter> _gpuCounters = new();
+
+    /// <summary>
     ///     读取整机 GPU 使用率（0–100）。取不到返回 -1。
     ///     <para>
     ///     数据源是性能计数器 <c>GPU Engine</c> 的 <c>Utilization Percentage</c>。这组计数器
@@ -382,54 +401,64 @@ public partial class PageWelcome
     ///     相加而不是取最大，因为多显卡或多个 3D 引擎真的会同时在跑。
     ///     </para>
     ///     <para>
-    ///     几个必须处理的坑：
-    ///     <list type="bullet">
-    ///         <item>首次 <c>NextValue()</c> 永远返回 0，必须间隔采样两次才有数。</item>
-    ///         <item>旧实例会残留（进程退出后计数器还在），读它抛异常，逐个 try 掉。</item>
-    ///         <item>老显卡/老驱动根本没有这组计数器，<c>PerformanceCounterCategory</c> 直接抛，
-    ///               这时返回 -1 让调用方把整行隐藏。</item>
-    ///     </list>
+    ///     第一次调用只负责建实例并播种（返回 -1），第二次开始才有真数据。
     ///     </para>
     /// </summary>
     private static double _ReadGpuUsage()
     {
         try
         {
+            if (!OperatingSystem.IsWindows()) return -1d;
             if (!PerformanceCounterCategory.Exists("GPU Engine")) return -1d;
 
             var category = new PerformanceCounterCategory("GPU Engine");
             var instances = category.GetInstanceNames();
-            if (instances.Length == 0) return -1d;
 
-            var total = 0d;
-            var seen = 0;
+            // 新出现的实例（比如游戏刚启动）要补进缓存，并把已经消失的清掉，
+            // 否则计数器列表会一直膨胀，而且读死实例会抛异常
+            var alive = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var name in instances)
+                if (name.Contains("engtype_3D", StringComparison.OrdinalIgnoreCase))
+                    alive.Add(name);
 
-            foreach (var instance in instances)
+            foreach (var stale in _gpuCounters.Keys.Where(k => !alive.Contains(k)).ToList())
             {
-                // 只看 3D 引擎：Copy / VideoDecode 那些和「显卡忙不忙」不是一回事
-                if (!instance.Contains("engtype_3D", StringComparison.OrdinalIgnoreCase)) continue;
+                try { _gpuCounters[stale].Dispose(); } catch { }
+                _gpuCounters.Remove(stale);
+            }
 
-                PerformanceCounter counter = null;
+            foreach (var name in alive)
+            {
+                if (_gpuCounters.ContainsKey(name)) continue;
                 try
                 {
-                    counter = new PerformanceCounter("GPU Engine", "Utilization Percentage", instance, true);
-                    counter.NextValue();          // 第一次丢弃
-                    var value = counter.NextValue();
-                    if (value <= 0d) continue;
-                    total += value;
-                    seen++;
+                    var counter = new PerformanceCounter("GPU Engine", "Utilization Percentage", name, true);
+                    counter.NextValue();          // 播种
+                    _gpuCounters[name] = counter;
                 }
                 catch
                 {
-                    // 计数器实例刚被回收 / 权限不足，跳过这条
-                }
-                finally
-                {
-                    counter?.Dispose();
+                    // 实例刚回收 / 权限不足，跳过
                 }
             }
 
-            if (seen == 0) return -1d;
+            if (_gpuCounters.Count == 0) return -1d;
+
+            var total = 0d;
+            foreach (var pair in _gpuCounters.ToList())
+            {
+                try
+                {
+                    var value = pair.Value.NextValue();
+                    if (value > 0d) total += value;
+                }
+                catch
+                {
+                    try { pair.Value.Dispose(); } catch { }
+                    _gpuCounters.Remove(pair.Key);
+                }
+            }
+
             return Math.Clamp(total, 0d, 100d);
         }
         catch (Exception ex)

@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Management;
+using System.Threading;
+using System.Threading.Tasks;
 using PCL.Core.Logging;
 
 namespace PCL.Core.Utils.OS;
@@ -27,7 +29,15 @@ public static class HardwareInfo
     public readonly record struct GPUInfo(string Name, string DriverVersion, long Memory);
 
     /// <summary>
-    /// 获取系统信息，例如 CPU 与 GPU，并存储到 CPUName 和 GPUs
+    ///     获取系统信息，例如 CPU 与 GPU，并存储到 CPUName 和 GPUs。
+    ///     <para>
+    ///     <b>不要在主线程上调用。</b>WMI 首次查询需要拉起 <c>Winmgmt</c> 服务，
+    ///     实测在普通机器上要 1 秒以上，放在启动关键路径上会让欢迎页白白多转一秒。
+    ///     </para>
+    ///     <para>
+    ///     查询语句只列真正用到的字段，不写 <c>SELECT *</c>：<c>Win32_VideoController</c>
+    ///     有五六十个属性，全取一遍的序列化开销比取三个字段大得多。
+    ///     </para>
     /// </summary>
     public static void GetHardwareInfo()
     {
@@ -35,7 +45,7 @@ public static class HardwareInfo
         var cpuName = (string?)null;
         try
         {
-            using var searcher = new ManagementObjectSearcher(@"root\CIMV2", "SELECT * FROM Win32_Processor");
+            using var searcher = new ManagementObjectSearcher(@"root\CIMV2", "SELECT Name FROM Win32_Processor");
             foreach (ManagementObject queryObj in searcher.Get())
             {
                 cpuName = queryObj["Name"]?.ToString()?.Trim();
@@ -51,8 +61,8 @@ public static class HardwareInfo
         var gpuList = new List<GPUInfo>();
         try
         {
-            using var searcher =
-                new ManagementObjectSearcher(@"root\CIMV2", "SELECT * FROM Win32_VideoController");
+            using var searcher = new ManagementObjectSearcher(@"root\CIMV2",
+                "SELECT Name, DriverVersion, AdapterRAM FROM Win32_VideoController");
             foreach (ManagementObject queryObj in searcher.Get())
             {
                 var gpuInfo = new GPUInfo
@@ -80,4 +90,29 @@ public static class HardwareInfo
         }
         LogWrapper.Info("已获取系统硬件信息");
     }
+
+    /// <summary>
+    ///     后台取一次硬件信息，不阻塞调用方。
+    ///     <para>
+    ///     用「已启动」标记保证整个进程只跑一次：这个结果只是拿来展示，
+    ///     重复查询除了再等一秒没有任何收益。
+    ///     </para>
+    /// </summary>
+    public static void GetHardwareInfoInBackground()
+    {
+        if (Interlocked.Exchange(ref _bgStarted, 1) != 0) return;
+        Task.Run(() =>
+        {
+            try
+            {
+                GetHardwareInfo();
+            }
+            catch (Exception ex)
+            {
+                LogWrapper.Warn(ex, "后台获取硬件信息时出错");
+            }
+        });
+    }
+
+    private static int _bgStarted;
 }
