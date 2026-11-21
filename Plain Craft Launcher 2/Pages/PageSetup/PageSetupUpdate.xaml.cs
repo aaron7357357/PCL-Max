@@ -1,4 +1,4 @@
-﻿using System.Windows;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Threading;
@@ -143,11 +143,19 @@ public partial class PageSetupUpdate
                     updateInfo = await Task.Run(() => UpdateManager.remoteServer.GetLatestVersion(
                         UpdateManager.TargetChannel, SystemInfo.IsArm64System ? UpdateArch.arm64 : UpdateArch.x64));
                     TextUpdateName.Text = "PCL_Max " + VersionNameFormat(updateInfo.VersionName);
-                    var summary = updateInfo.Changelog.Between("<summary>", "</summary>");
-                    if (!updateInfo.Changelog.Contains("<summary>") || string.IsNullOrWhiteSpace(summary.Trim()))
-                        TextChangelog.Text = Lang.Text("Setup.Update.Changelog.Empty");
-                    else
-                        TextChangelog.Text = summary;
+                    TextUpdateDesc.Text = Lang.Text("Setup.Update.ReleaseDesc");
+
+                    // Release 说明优先取 <summary>…</summary> 那一段（Release 页里给个简短摘要用）；
+                    // 没写 <summary> 时不再直接甩「忘记提供摘要」，而是拿正文第一段顶上去——
+                    // 我们自己发的 Release 就是整篇 markdown，白白让用户看到一个空白提示太浪费。
+                    var changelog = updateInfo.Changelog ?? string.Empty;
+                    var summary = changelog.Between("<summary>", "</summary>");
+                    if (string.IsNullOrWhiteSpace(summary))
+                        summary = _FirstParagraph(changelog);
+
+                    TextChangelog.Text = string.IsNullOrWhiteSpace(summary)
+                        ? Lang.Text("Setup.Update.Changelog.Empty")
+                        : summary.Trim();
                 }
                 catch (Exception ex)
                 {
@@ -365,6 +373,38 @@ public partial class PageSetupUpdate
     {
         // 用户主动点了「重新检查」，就必须真的去问一次服务器，不能拿缓存糊弄
         _ = CheckUpdateAsync(true);
+    }
+
+    /// <summary>
+    ///     从 Release 正文里取一段能当摘要用的文字。
+    ///     <para>
+    ///     优先取第一个非空段落；跳过 markdown 的标题行（<c>#</c>）、引用块（<c>&gt;</c>）、
+    ///     表格行（<c>|</c>）、代码块与分隔线——这些拿来做摘要读起来莫名其妙。
+    ///     顺带剥掉行内的 <c>**</c> 粗体标记，摘要区不渲染 markdown，留着只会显示成星号。
+    ///     </para>
+    /// </summary>
+    private static string _FirstParagraph(string markdown)
+    {
+        if (string.IsNullOrWhiteSpace(markdown)) return string.Empty;
+
+        foreach (var rawLine in markdown.Replace("\r\n", "\n").Split('\n'))
+        {
+            var line = rawLine.Trim();
+            if (line.Length == 0) continue;
+            if (line.StartsWith('#') || line.StartsWith('>') || line.StartsWith('|') ||
+                line.StartsWith("```", StringComparison.Ordinal) ||
+                line.StartsWith("---", StringComparison.Ordinal) ||
+                line.StartsWith("===", StringComparison.Ordinal))
+                continue;
+
+            var text = line.Replace("**", string.Empty).Replace("`", string.Empty).Trim();
+            if (text.Length == 0) continue;
+
+            // 摘要一行就够，太长了会被裁切显示成半句话
+            return text.Length <= 120 ? text : text[..120] + "…";
+        }
+
+        return string.Empty;
     }
 
     private enum UpdateStatus

@@ -222,6 +222,52 @@ public partial class PageSetupUI
     }
 
     /// <summary>
+    ///     低配模式开关。
+    ///     <para>
+    ///     打开时把「吃显卡」的几项一次性压到最低：关背景模糊、背景拉满不透明、
+    ///     关高级材质与液态玻璃。取消勾选不会改动用户原来的值——它们一直在配置里，
+    ///     只是低配模式期间被覆盖，关掉这个开关就恢复原样。
+    ///     </para>
+    /// </summary>
+    private void LowSpec_Change(object senderRaw, bool user)
+    {
+        if (ModAnimation.AniControlEnabled != 0) return;
+
+        var on = ((MyCheckBox)senderRaw).Checked == true;
+        Config.Preference.LowSpecMode = on;
+
+        if (on)
+        {
+            Config.Preference.Background.WallpaperBlurRadius = 0;
+            Config.Preference.Background.WallpaperOpacity = 1000;
+            Config.Preference.Background.AutoPauseVideo = false;
+            Config.Preference.Theme.WindowOpacity = 1000;
+            Config.Preference.Blur.IsEnabled = false;
+            Config.Preference.Theme.LiquidGlassEnabled = false;
+            _SyncLowSpecControls();
+        }
+
+        ModBase.Log($"[UI] 低配模式：{(on ? "已开启" : "已关闭")}", ModBase.LogLevel.Debug);
+    }
+
+    /// <summary>低配模式打开后，把受影响的那几个控件状态同步过去，避免界面与实际不一致。</summary>
+    private void _SyncLowSpecControls()
+    {
+        try
+        {
+            if (CheckBlur is not null) CheckBlur.Checked = false;
+            if (CheckLiquidGlass is not null) CheckLiquidGlass.Checked = false;
+            if (PanBlurValue is not null) PanBlurValue.Visibility = Visibility.Collapsed;
+            if (PanGlassValue is not null) PanGlassValue.Visibility = Visibility.Collapsed;
+        }
+        catch (Exception ex)
+        {
+            // 控件还没加载完时可能为 null，忽略即可——配置已经写进去了
+            ModBase.Log(ex, "[UI] 同步低配模式控件状态失败", ModBase.LogLevel.Debug);
+        }
+    }
+
+    /// <summary>
     /// 液态玻璃开关。
     /// <para>
     /// 不走 <c>SetByTag</c>：该键经 <c>ConfigService.TrySetValue</c> 写入会静默失败

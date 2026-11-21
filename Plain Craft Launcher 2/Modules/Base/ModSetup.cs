@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Effects;
@@ -583,6 +583,61 @@ public class ModSetup
         System.Windows.Application.Current.Resources["BlurType"] = (KernelType)value;
     }
 
+    /// <summary>
+    ///     在标题栏「PCL_Max」右侧显示一个小版本号（如 <c>0.3.1Beta2</c>）。
+    ///     <para>
+    ///     位置按 <see cref="ModMain.frmMain.LabTitleLogo" /> 的实际渲染宽度算：
+    ///     文字宽度随字号与字体变化，写死偏移在换了字号或语言之后就会叠字或者飘太远。
+    ///     每次 <see cref="UiLogoType" /> 重新应用时都重算一次，改名/换字号也能跟上。
+    ///     </para>
+    /// </summary>
+    public static void UiTitleVersion(bool show)
+    {
+        var main = ModMain.frmMain;
+        if (!show)
+        {
+            main.PanTitleVersion.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        main.LabTitleVersion.Text = ModBase.versionBaseName;
+        main.PanTitleVersion.Visibility = Visibility.Visible;
+
+        void Reposition()
+        {
+            try
+            {
+                var logo = main.LabTitleLogo;
+                var width = logo.ActualWidth;
+                // 还没测量出来时退回按字符估算，等 LayoutUpdated 再修正
+                if (width <= 0d) width = logo.Text.Length * logo.FontSize * 0.62d;
+                main.PanTitleVersion.Margin = new Thickness(logo.Margin.Left + width + 7d, 0, 0, 0);
+            }
+            catch
+            {
+                // 排版失败只是位置不准，不该影响启动
+            }
+        }
+
+        Reposition();
+        // Loaded 之前 ActualWidth 是 0，等一次布局再定位
+        main.LabTitleLogo.LayoutUpdated -= LabTitleLogo_LayoutUpdated;
+        main.LabTitleLogo.LayoutUpdated += LabTitleLogo_LayoutUpdated;
+    }
+
+    /// <summary>标题栏文字排版变化后重新对齐版本号。</summary>
+    private static void LabTitleLogo_LayoutUpdated(object? sender, EventArgs e)
+    {
+        var main = ModMain.frmMain;
+        if (main.PanTitleVersion.Visibility != Visibility.Visible) return;
+        var logo = main.LabTitleLogo;
+        if (logo.ActualWidth <= 0d) return;
+
+        var left = logo.Margin.Left + logo.ActualWidth + 7d;
+        if (Math.Abs(main.PanTitleVersion.Margin.Left - left) > 0.5d)
+            main.PanTitleVersion.Margin = new Thickness(left, 0, 0, 0);
+    }
+
     // 顶部栏
     public static void UiLogoType(int value)
     {
@@ -597,6 +652,7 @@ public class ModSetup
                 ModMain.frmMain.LabTitleLogo.Visibility = Visibility.Collapsed;
                 ModMain.frmMain.ImageTitleLogo.Visibility = Visibility.Collapsed;
                 ModMain.frmMain.CELogo.Visibility = Visibility.Collapsed;
+                UiTitleVersion(show: false);
                 if (ModMain.frmSetupUI is not null)
                 {
                     ModMain.frmSetupUI.CheckLogoLeft.Visibility = Visibility.Visible;
@@ -615,6 +671,7 @@ public class ModSetup
                 ModMain.frmMain.LabTitleLogo.Text = "PCL_Max";
                 ModMain.frmMain.ImageTitleLogo.Visibility = Visibility.Collapsed;
                 ModMain.frmMain.CELogo.Visibility = Visibility.Collapsed;
+                UiTitleVersion(show: true);
                 if (ModMain.frmSetupUI is not null)
                 {
                     ModMain.frmSetupUI.CheckLogoLeft.Visibility = Visibility.Collapsed;
@@ -633,6 +690,7 @@ public class ModSetup
                 ModMain.frmMain.ImageTitleLogo.Visibility = Visibility.Collapsed;
                 // 自定义标题后面不强加 Lite 徽标
                 ModMain.frmMain.CELogo.Visibility = Visibility.Collapsed;
+                UiTitleVersion(show: false);
                 if (ModMain.frmSetupUI is not null)
                 {
                     ModMain.frmSetupUI.CheckLogoLeft.Visibility = Visibility.Collapsed;
@@ -652,6 +710,7 @@ public class ModSetup
                 ModMain.frmMain.ImageTitleLogo.Visibility = Visibility.Visible;
                 // 自定义标题后面不强加 Lite 徽标
                 ModMain.frmMain.CELogo.Visibility = Visibility.Collapsed;
+                UiTitleVersion(show: false);
                 if (ModMain.frmSetupUI is not null)
                 {
                     ModMain.frmSetupUI.CheckLogoLeft.Visibility = Visibility.Collapsed;

@@ -3146,6 +3146,9 @@
     <sys:String x:Key="Setup.Ui.Window.Size.Custom">自定义</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.Opacity2">不透明度</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.ShowLogo">打开启动器时显示 PCL_Max 图标</sys:String>
+    <sys:String x:Key="Setup.Ui.LowSpec.Title">低配模式</sys:String>
+    <sys:String x:Key="Setup.Ui.LowSpec.Desc">适合显卡较弱或核显的电脑。开启后会关闭背景模糊、窗口半透明与液态玻璃，界面朴素一些但明显更流畅。</sys:String>
+    <sys:String x:Key="Setup.Ui.LowSpec.ToolTip">一键关掉所有吃显卡的视觉效果。&#xA;&#xA;会被关掉的项：背景模糊、窗口不透明度、高级材质、液态玻璃。&#xA;取消勾选不会改动你原来的设置，只是不再覆盖它们。</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.ShowTriviaHint">在启动游戏时显示"你知道吗"</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.Title">基础</sys:String>
 
@@ -3314,6 +3317,7 @@
 
     <!-- Setup.Update -->
 
+    <sys:String x:Key="Setup.Update.ReleaseDesc">PCL_Max 开发组</sys:String>
     <sys:String x:Key="Setup.Update.Changelog.Empty">开发者似乎忘记提供更新摘要了...也许你可以点击下方看看完整更新日志？</sys:String>
     <sys:String x:Key="Setup.Update.Changelog.MoreInfo">有关此更新的更多信息...</sys:String>
     <sys:String x:Key="Setup.Update.Changelog.Placeholder">PCL_Max 2.14.0 带来了让人眼前一亮的新设计和 Pigeon 智能的多项功能，同时还带来了令人愉快的跨实例工作方式，助你提高工作效率。</sys:String>

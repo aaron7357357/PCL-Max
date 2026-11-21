@@ -1,4 +1,4 @@
-﻿using PCL.Core.App.Configuration;
+using PCL.Core.App.Configuration;
 
 namespace PCL.Core.App;
 
@@ -238,6 +238,15 @@ public static partial class Config
         /// 在启动游戏时显示你知道吗。
         /// </summary>
         [ConfigItem<bool>("UiShowLaunchingHint", true, ConfigSource.Local)] public partial bool ShowLaunchingHint { get; set; }
+
+        /// <summary>
+        ///     低配模式：一键关掉所有吃显卡的视觉效果（背景模糊、半透明、液态玻璃、背景视频）。
+        ///     <para>
+        ///     默认关闭。低配机器勾上之后界面会朴素一些，但帧率稳定得多。
+        ///     关闭这个开关时不会去改用户原本的各项设置——它是一组覆盖，不是一个记忆状态。
+        ///     </para>
+        /// </summary>
+        [ConfigItem<bool>("UiLowSpecMode", false, ConfigSource.Local)] public partial bool LowSpecMode { get; set; }
 
         /// <summary>
         /// 标题内容类型。

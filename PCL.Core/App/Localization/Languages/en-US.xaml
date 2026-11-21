@@ -3146,6 +3146,9 @@ You can open Mod Management first, or launch anyway (this may crash the game).</
     <sys:String x:Key="Setup.Ui.Window.Size.Custom">Custom</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.Opacity2">Opacity</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.ShowLogo">Display the PCL_Max logo while opening the launcher</sys:String>
+    <sys:String x:Key="Setup.Ui.LowSpec.Title">Low-end mode</sys:String>
+    <sys:String x:Key="Setup.Ui.LowSpec.Desc">For weaker GPUs and integrated graphics. Turns off background blur, window transparency and liquid glass — plainer, but noticeably smoother.</sys:String>
+    <sys:String x:Key="Setup.Ui.LowSpec.ToolTip">Disables every GPU-heavy visual effect in one go.&#xA;&#xA;Turns off: background blur, window opacity, advanced material, liquid glass.&#xA;Unchecking does not change your own settings, it just stops overriding them.</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.ShowTriviaHint">Show "Trivia" when launching the game</sys:String>
     <sys:String x:Key="Setup.Ui.Basic.Title">Basics</sys:String>
 
@@ -3314,6 +3317,7 @@ You can open Mod Management first, or launch anyway (this may crash the game).</
 
     <!-- Setup.Update -->
 
+    <sys:String x:Key="Setup.Update.ReleaseDesc">PCL_Max Team</sys:String>
     <sys:String x:Key="Setup.Update.Changelog.Empty">The developers seem to have forgotten to provide an update summary... Maybe click below to view the full changelog?</sys:String>
     <sys:String x:Key="Setup.Update.Changelog.MoreInfo">More information about this update...</sys:String>
     <sys:String x:Key="Setup.Update.Changelog.Placeholder">PCL_Max 2.14.0 brings a refreshing new design, several Pigeon smart features, and a delightful cross-instance workflow to boost your productivity.</sys:String>

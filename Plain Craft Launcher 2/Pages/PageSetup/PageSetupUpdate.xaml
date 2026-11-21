@@ -1,4 +1,4 @@
-﻿<local:MyPageRight
+<local:MyPageRight
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="clr-namespace:PCL.Controls" xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -93,11 +93,11 @@
                         <Image x:Name="ImgUpdateIcon" Source="pack://application:,,,/Images/icon.png"
                                Grid.Column="0" Grid.Row="0" Grid.RowSpan="3" Height="50" Width="50"
                                HorizontalAlignment="Left" VerticalAlignment="Center" />
-                        <TextBlock x:Name="TextUpdateName" Text="PCL_Max 2.14.0" FontWeight="Bold" FontSize="20"
+                        <TextBlock x:Name="TextUpdateName" Text="PCL_Max" FontWeight="Bold" FontSize="20"
                                    Grid.Row="0" Grid.Column="2" HorizontalAlignment="Left" VerticalAlignment="Bottom" />
-                        <TextBlock x:Name="TextUpdateDesc" Text="by bsk10ww" FontSize="14" Grid.Row="2"
+                        <!--  设计器里的占位文字不要留下真实内容：漏赋值时会把占位文字显示给用户  -->
+                        <TextBlock x:Name="TextUpdateDesc" Text="" FontSize="14" Grid.Row="2"
                                    Grid.Column="2" HorizontalAlignment="Left" VerticalAlignment="Top" />
-                        <!--  按钮宽度跟着文案走：写死 85 时英文的 "Download and install" 会被裁成 "wnload and ins"  -->
                         <local:MyButton x:Name="BtnUpdate" Text="{DynamicResource Setup.Update.Install}" ColorType="Highlight" Grid.Row="0"
                                         Grid.RowSpan="2" Grid.Column="3" HorizontalAlignment="Right"
                                         VerticalAlignment="Center" MinWidth="85" MaxWidth="230" Height="30"

@@ -1,4 +1,4 @@
-﻿<local:MyPageRight
+<local:MyPageRight
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="clr-namespace:PCL.Controls"
@@ -213,6 +213,14 @@
                         <local:MyCheckBox Text="{DynamicResource Setup.Ui.Basic.ShowTriviaHint}" Margin="-1,0,0,7" Height="22"
                                            x:Name="CheckShowLaunchingHint" Tag="UiShowLaunchingHint"
                                            Change="CheckBoxChange" />
+                        <!--  低配模式：一键关掉所有吃显卡的效果，低配机用它换流畅  -->
+                        <local:MyCheckBox Text="{DynamicResource Setup.Ui.LowSpec.Title}" Margin="-1,0,0,4" Height="22"
+                                           x:Name="CheckLowSpecMode" Tag="UiLowSpecMode"
+                                           ToolTip="{DynamicResource Setup.Ui.LowSpec.ToolTip}"
+                                           Change="LowSpec_Change" />
+                        <TextBlock Margin="0,0,0,8" FontSize="11.5" TextWrapping="Wrap" Opacity="0.75"
+                                   Foreground="{DynamicResource ColorBrushGray2}"
+                                   Text="{DynamicResource Setup.Ui.LowSpec.Desc}" />
                         <StackPanel x:Name="PanelBlur" Margin="0,0,0,10">
                             <local:MyCheckBox Text="{DynamicResource Setup.Ui.Basic.AdvancedMaterial}" Height="22" x:Name="CheckBlur" Tag="UiBlur"
                                               ToolTip="{DynamicResource Setup.Ui.Basic.AdvancedMaterial.ToolTip}"

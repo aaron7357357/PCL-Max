@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Linq;
@@ -183,6 +184,13 @@ public partial class PageWelcome
         ramRow.Margin = new Thickness(0, 14, 0, 0);
         panel.Children.Add(ramRow);
 
+        // GPU 使用率：靠性能计数器，某些驱动不提供这组计数器，取不到时把整行隐藏，
+        // 而不是显示一个永远 0% 的假数据
+        var gpuRow = _BuildMetricRow("GPU 使用率", out var gpuValue, out var gpuFill, out var gpuTrack);
+        gpuRow.Margin = new Thickness(0, 14, 0, 0);
+        gpuRow.Visibility = Visibility.Collapsed;
+        panel.Children.Add(gpuRow);
+
         var detail = _Text("", 11, false);
         detail.Margin = new Thickness(0, 14, 0, 0);
         detail.SetResourceReference(TextBlock.ForegroundProperty, "ColorBrushGray4");
@@ -196,6 +204,9 @@ public partial class PageWelcome
         // 不能读 fill.Width：属性返回的是基值，动画跑起来之后它永远还是那个初始值。
         var cpuShown = 0d;
         var ramShown = 0d;
+        var gpuShown = 0d;
+        var gpuProbed = false;
+        var gpuSupported = false;
 
         void Update()
         {
@@ -228,6 +239,21 @@ public partial class PageWelcome
                 AnimateBarWidth(ramFill, ramTrack, ram, ref ramShown);
                 detail.Text = $"已用 {FormatGb(mem.ullTotalPhys - mem.ullAvailPhys)} / " +
                               $"{FormatGb(mem.ullTotalPhys)}  ·  可用 {FormatGb(mem.ullAvailPhys)}";
+            }
+
+            // GPU 只在第一次成功取到值后才把行露出来；之后取不到就保持上一次的数字，
+            // 避免因为某个瞬间计数器为空导致行忽隐忽现
+            if (!gpuProbed || gpuSupported)
+            {
+                var gpu = _ReadGpuUsage();
+                gpuProbed = true;
+                if (gpu >= 0d)
+                {
+                    gpuSupported = true;
+                    gpuRow.Visibility = Visibility.Visible;
+                    gpuValue.Text = $"{gpu:0}%";
+                    AnimateBarWidth(gpuFill, gpuTrack, gpu, ref gpuShown);
+                }
             }
         }
 
@@ -346,6 +372,72 @@ public partial class PageWelcome
     }
 
     private static string FormatGb(ulong bytes) => $"{bytes / 1024d / 1024d / 1024d:0.0} GB";
+
+    /// <summary>
+    ///     读取整机 GPU 使用率（0–100）。取不到返回 -1。
+    ///     <para>
+    ///     数据源是性能计数器 <c>GPU Engine</c> 的 <c>Utilization Percentage</c>。这组计数器
+    ///     按「引擎」拆分实例，一台机器上常有几十上百个（3D、Copy、VideoDecode…，
+    ///     每个进程每个引擎一条），要按 <c>engtype_3D</c> 过滤后再把同一时刻的百分比相加。
+    ///     相加而不是取最大，因为多显卡或多个 3D 引擎真的会同时在跑。
+    ///     </para>
+    ///     <para>
+    ///     几个必须处理的坑：
+    ///     <list type="bullet">
+    ///         <item>首次 <c>NextValue()</c> 永远返回 0，必须间隔采样两次才有数。</item>
+    ///         <item>旧实例会残留（进程退出后计数器还在），读它抛异常，逐个 try 掉。</item>
+    ///         <item>老显卡/老驱动根本没有这组计数器，<c>PerformanceCounterCategory</c> 直接抛，
+    ///               这时返回 -1 让调用方把整行隐藏。</item>
+    ///     </list>
+    ///     </para>
+    /// </summary>
+    private static double _ReadGpuUsage()
+    {
+        try
+        {
+            if (!PerformanceCounterCategory.Exists("GPU Engine")) return -1d;
+
+            var category = new PerformanceCounterCategory("GPU Engine");
+            var instances = category.GetInstanceNames();
+            if (instances.Length == 0) return -1d;
+
+            var total = 0d;
+            var seen = 0;
+
+            foreach (var instance in instances)
+            {
+                // 只看 3D 引擎：Copy / VideoDecode 那些和「显卡忙不忙」不是一回事
+                if (!instance.Contains("engtype_3D", StringComparison.OrdinalIgnoreCase)) continue;
+
+                PerformanceCounter counter = null;
+                try
+                {
+                    counter = new PerformanceCounter("GPU Engine", "Utilization Percentage", instance, true);
+                    counter.NextValue();          // 第一次丢弃
+                    var value = counter.NextValue();
+                    if (value <= 0d) continue;
+                    total += value;
+                    seen++;
+                }
+                catch
+                {
+                    // 计数器实例刚被回收 / 权限不足，跳过这条
+                }
+                finally
+                {
+                    counter?.Dispose();
+                }
+            }
+
+            if (seen == 0) return -1d;
+            return Math.Clamp(total, 0d, 100d);
+        }
+        catch (Exception ex)
+        {
+            ModBase.Log(ex, "[Welcome] 读取 GPU 使用率失败", ModBase.LogLevel.Debug);
+            return -1d;
+        }
+    }
 
     [StructLayout(LayoutKind.Sequential)]
     private struct FileTime

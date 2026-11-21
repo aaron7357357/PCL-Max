@@ -22,24 +22,23 @@ public partial class WindowUpdateNotes
     /// <summary>
     ///     当前构建的说明文案。发版时改这里。
     /// </summary>
-    private const string Subtitle = "联机页新增网络状态检测，开房前就能看到自己的 IPv6 情况。";
+    private const string Subtitle = "修掉任务管理页打不开的问题，更新页也不再显示占位文字。";
 
     /// <summary>
     ///     每条的标题与说明。
     /// </summary>
     private static readonly (string Title, string[] Items)[] Sections =
     [
+        ("修掉的问题", new[]
+        {
+            "任务管理页打不开：点进去后卡片构造失败，整页空白。原因是动态拼 XAML 时把控件命名空间写成了 PCL，而 MyCard 实际在 PCL.Controls。",
+            "更新页显示 by bsk10ww：这是从上游抄来的设计器占位文字，从来没有被真实数据覆盖过。",
+            "更新页提示「开发者似乎忘记提供更新摘要」：Release 说明没写 <summary> 标签就取不到摘要，现在改用正文第一段。"
+        }),
         ("联机", new[]
         {
-            "左栏新增「当前状态」，直接显示本机 IPv6 是否可用。",
-            "有公网 IPv6：陶瓦可以直连打洞，延迟低、不限速。",
-            "没有公网 IPv6：自动走中继，能用但速度取决于中继节点。",
-            "「重新检测网络」可以手动刷新，插拔网线或换网络后点一下即可。"
-        }),
-        ("顺带修掉的", new[]
-        {
-            "IPv6 检测改为遍历全部网卡，不再因为第一张网卡没有 IPv6 就误判成不可用。",
-            "排除链路本地地址（fe80::）与虚拟网卡，避免把内网地址当成公网可用。"
+            "左栏显示本机 IPv6 状态，开房前就知道能不能直连。",
+            "有公网 IPv6 走直连打洞，没有则自动退回中继。"
         })
     ];
 
