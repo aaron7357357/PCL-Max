@@ -1,19 +1,49 @@
-﻿<local:MyPageLeft x:Class="PCL.Pages.PageLink.PageLinkLeft"
+<local:MyPageLeft x:Class="PCL.Pages.PageLink.PageLinkLeft"
                   xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                   xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
                   xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                   xmlns:local="clr-namespace:PCL.Controls"
                   mc:Ignorable="d">
-    <StackPanel Orientation="Vertical" x:Name="PanItem" Margin="0,12,0,0">
-        <TextBlock Text="联机" Margin="13,5,5,3" Opacity="0.6" FontSize="12" />
-        <local:MyListItem x:Name="ItemTerracotta"
-                          IsScaleAnimationEnabled="False"
-                          Type="RadioBox" Tag="0"
-                          MinPaddingRight="35" Height="36"
-                          VerticalAlignment="Top"
-                          Title="陶瓦联机" Check="PageCheck"
-                          LogoScale="0.9"
-                          SvgIcon="lucide/wifi" />
-    </StackPanel>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Orientation="Vertical" x:Name="PanItem" Margin="0,12,0,0">
+            <TextBlock Text="联机" Margin="13,5,5,3" Opacity="0.6" FontSize="12" />
+            <local:MyListItem x:Name="ItemTerracotta"
+                              IsScaleAnimationEnabled="False"
+                              Type="RadioBox" Tag="0"
+                              MinPaddingRight="35" Height="36"
+                              VerticalAlignment="Top"
+                              Title="陶瓦联机" Check="PageCheck"
+                              LogoScale="0.9"
+                              SvgIcon="lucide/wifi" />
+        </StackPanel>
+
+        <!--  网络状态：IPv6 决定陶瓦能否直连打洞，没有就走中继，速度差一截  -->
+        <StackPanel Grid.Row="1" Margin="13,8,10,12">
+            <Rectangle Height="1" Margin="0,0,0,10" Fill="{DynamicResource ColorBrush7}" Opacity="0.35" />
+            <TextBlock Text="当前状态" Margin="0,0,0,6" Opacity="0.6" FontSize="12" />
+
+            <StackPanel Orientation="Horizontal">
+                <Ellipse x:Name="ShapeNetDot" Width="8" Height="8" VerticalAlignment="Center"
+                         Margin="0,0,6,0" Fill="{DynamicResource ColorBrushGray2}" />
+                <TextBlock x:Name="LabNetTitle" FontSize="12.5" FontWeight="SemiBold"
+                           Text="正在检测…" TextWrapping="Wrap" />
+            </StackPanel>
+
+            <TextBlock x:Name="LabNetDesc" Margin="14,3,0,0" FontSize="11"
+                       TextWrapping="Wrap" Opacity="0.75" LineHeight="15"
+                       Foreground="{DynamicResource ColorBrushGray2}"
+                       Text="读取本机网络接口信息" />
+
+            <local:MyButton x:Name="BtnNetRefresh" Margin="0,9,0,0" Height="28" Padding="0,0"
+                            HorizontalAlignment="Stretch"
+                            Text="重新检测网络"
+                            Click="BtnNetRefresh_Click" />
+        </StackPanel>
+    </Grid>
 </local:MyPageLeft>

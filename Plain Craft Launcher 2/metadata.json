@@ -1,10 +1,10 @@
 {
   "name": "PCL_Max",
   "version": {
-    "base": "0.3.0",
+    "base": "0.3.1",
     "upstream": "2.12.1",
-    "suffix": "",
-    "code": 31
+    "suffix": "Beta1",
+    "code": 32
   },
   "licenses": [
     {
