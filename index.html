@@ -222,6 +222,22 @@
   .ai-row select:focus { outline: none; border-color: var(--blue); }
   .ai-row input:focus { outline: none; border-color: var(--blue); }
 
+  /* 模型行：下拉 + 拉取按钮并排 */
+  .ai-model-box { display: flex; gap: 9px; align-items: stretch; }
+  .ai-model-box select { flex: 1; min-width: 0; }
+  .mini-btn {
+    flex: none; padding: 0 14px; border-radius: 9px; cursor: pointer;
+    background: #1b2430; border: 1px solid var(--line);
+    color: var(--dim); font-size: 12.5px; font-family: inherit;
+    transition: .15s ease; white-space: nowrap;
+  }
+  .mini-btn:hover { border-color: var(--blue); color: var(--fg); }
+  .mini-btn:disabled { opacity: .45; cursor: not-allowed; }
+
+  .ai-model-hint {
+    margin: 7px 0 0 100px; font-size: 12px; color: #6b788b; line-height: 1.6;
+  }
+
   .ai-actions {
     display: flex; align-items: center; gap: 11px; margin-top: 16px; flex-wrap: wrap;
   }
@@ -854,19 +870,20 @@
       '</div>' +
 
       '<div class="ai-fields">' +
+      '<div class="ai-fields">' +
       '<label class="ai-row">' +
-      '<span>API 地址</span>' +
-      '<select id="aiBasePreset">' +
-      '<option value="https://api.deepseek.com/v1/chat/completions">DeepSeek 官方</option>' +
-      '<option value="https://api.siliconflow.cn/v1/chat/completions">硅基流动</option>' +
-      '<option value="https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions">阿里通义</option>' +
-      '<option value="https://open.bigmodel.cn/api/paas/v4/chat/completions">智谱 GLM</option>' +
-      '<option value="https://api.moonshot.cn/v1/chat/completions">Moonshot</option>' +
+      '<span>服务商</span>' +
+      '<select id="aiProvider">' +
+      '<option value="deepseek">DeepSeek 官方</option>' +
+      '<option value="siliconflow">硅基流动</option>' +
+      '<option value="dashscope">阿里通义</option>' +
+      '<option value="bigmodel">智谱 GLM</option>' +
+      '<option value="moonshot">Moonshot</option>' +
       '<option value="custom">自定义…</option>' +
       '</select>' +
       '</label>' +
       '<label class="ai-row" id="aiBaseCustomRow" style="display:none">' +
-      '<span>自定义地址</span>' +
+      '<span>API 地址</span>' +
       '<input type="text" id="aiBase" spellcheck="false" ' +
       'placeholder="https://你的服务商/v1/chat/completions">' +
       '</label>' +
@@ -878,14 +895,16 @@
 
       '<label class="ai-row">' +
       '<span>模型</span>' +
-      '<input type="text" id="aiModel" spellcheck="false" list="aiModelList" ' +
-      'placeholder="deepseek-chat">' +
-      '<datalist id="aiModelList">' +
-      '<option value="DeepSeek-V4.1-Flash">' +
-      '<option value="DeepSeek-V4-Pro">' +
-      '</datalist>' +
-      '</label>' +
+      '<div class="ai-model-box">' +
+      '<select id="aiModel"></select>' +
+      '<button class="mini-btn" id="btnFetchModels" type="button" title="填好 API Key 后点这里，拉取该服务商的可用模型">拉取列表</button>' +
       '</div>' +
+      '</label>' +
+      '<div class="ai-model-hint" id="aiModelHint">' +
+      'DeepSeek-V4.1-Flash 是默认模型，日常排查够用。点「拉取列表」可读取该服务商全部可用模型。' +
+      '</div>' +
+      '</div>' +
+
 
       '<div class="ai-actions">' +
       '<button class="btn primary" id="btnAskAi" type="button">开始分析</button>' +
@@ -1048,44 +1067,150 @@
   }
 
   // ── AI 分析面板 ──
-  var AI_STORE_KEY = 'pclmax_ai_cfg';
+  var AI_STORE_KEY = 'pclmax_ai_cfg_v2';
 
-  function restoreAiSettings() {
-    try {
-      var raw = localStorage.getItem(AI_STORE_KEY);
-      if (!raw) { syncBasePreset(); return; }
-      var cfg = JSON.parse(raw);
-      if (cfg.model) document.getElementById('aiModel').value = cfg.model;
-      if (cfg.key) document.getElementById('aiKey').value = cfg.key;
-      if (cfg.base) {
-        // 存的是完整地址：能对上预设就选中预设，否则落到「自定义」
-        var sel = document.getElementById('aiBasePreset');
-        var matched = false;
-        for (var i = 0; i < sel.options.length; i++) {
-          if (sel.options[i].value === cfg.base) { sel.selectedIndex = i; matched = true; break; }
-        }
-        if (!matched) {
-          sel.value = 'custom';
-          document.getElementById('aiBase').value = cfg.base;
-        }
-      }
-      syncBasePreset();
-    } catch (e) { /* 配置坏了就当没有 */ }
+  // 各服务商的预设。models 是这个服务商自己的模型，不要混用——
+  // 在智谱的接口上填 deepseek-chat 只会报「模型不存在」。
+  var PROVIDERS = {
+    deepseek: {
+      name: 'DeepSeek 官方',
+      base: 'https://api.deepseek.com/v1/chat/completions',
+      modelsBase: 'https://api.deepseek.com/v1/models',
+      models: ['DeepSeek-V4.1-Flash', 'DeepSeek-V4-Pro']
+    },
+    siliconflow: {
+      name: '硅基流动',
+      base: 'https://api.siliconflow.cn/v1/chat/completions',
+      modelsBase: 'https://api.siliconflow.cn/v1/models',
+      models: ['deepseek-ai/DeepSeek-V3', 'Qwen/Qwen2.5-72B-Instruct', 'THUDM/glm-4-9b-chat']
+    },
+    dashscope: {
+      name: '阿里通义',
+      base: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
+      modelsBase: 'https://dashscope.aliyuncs.com/compatible-mode/v1/models',
+      models: ['qwen-plus', 'qwen-max', 'qwen-turbo', 'qwen-long']
+    },
+    bigmodel: {
+      name: '智谱 GLM',
+      base: 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
+      modelsBase: 'https://open.bigmodel.cn/api/paas/v4/models',
+      models: ['glm-4-plus', 'glm-4-air', 'glm-4-flash', 'glm-4-long']
+    },
+    moonshot: {
+      name: 'Moonshot',
+      base: 'https://api.moonshot.cn/v1/chat/completions',
+      modelsBase: 'https://api.moonshot.cn/v1/models',
+      models: ['moonshot-v1-8k', 'moonshot-v1-32k', 'moonshot-v1-128k', 'kimi-latest']
+    },
+    custom: {
+      name: '自定义',
+      base: '',
+      modelsBase: '',
+      models: []
+    }
+  };
+
+  function providerCfg() {
+    var sel = document.getElementById('aiProvider');
+    return PROVIDERS[(sel && sel.value) || 'deepseek'] || PROVIDERS.deepseek;
   }
 
-  /// 下拉切到「自定义」时显示输入框；选具体服务商时隐藏并写回地址。
-  function syncBasePreset() {
-    var sel = document.getElementById('aiBasePreset');
+  /// 当前生效的 API 地址。自定义时取输入框，否则取预设。
+  function currentBase() {
+    var sel = document.getElementById('aiProvider');
+    if (sel && sel.value === 'custom') return document.getElementById('aiBase').value.trim();
+    return providerCfg().base;
+  }
+
+  /// 换服务商时重建模型列表。
+  /// 关键点：切换后模型下拉里只剩新服务商的模型，不会出现「选了智谱却看到 deepseek-chat」。
+  function rebuildModelList(selectedValue) {
+    var sel = document.getElementById('aiModel');
+    var cfg = providerCfg();
+    sel.innerHTML = '';
+
+    var list = cfg.models.slice();
+    // 保留已拉取到的列表（拉取比硬编码准，服务商会增删模型）
+    if (_fetchedModels && _fetchedModels.provider === document.getElementById('aiProvider').value)
+      list = _fetchedModels.models.slice();
+
+    if (list.length === 0) {
+      var opt = document.createElement('option');
+      opt.value = '';
+      opt.textContent = '（自定义服务商，可手动输入）';
+      sel.appendChild(opt);
+    } else {
+      for (var i = 0; i < list.length; i++) {
+        var o = document.createElement('option');
+        o.value = list[i];
+        o.textContent = list[i];
+        sel.appendChild(o);
+      }
+      // 没有指定选中项时默认选第一个，避免下拉显示空白
+      if (!selectedValue || list.indexOf(selectedValue) < 0) sel.selectedIndex = 0;
+    }
+
+    if (selectedValue && list.indexOf(selectedValue) >= 0) sel.value = selectedValue;
+
+    // 自定义服务商允许手输：把下拉换成可编辑
+    sel.style.display = '';
+    updateModelHint();
+  }
+
+  function updateModelHint() {
+    var hint = document.getElementById('aiModelHint');
+    var sel = document.getElementById('aiProvider');
+    if (!hint) return;
+    if (_fetchedModels && _fetchedModels.provider === (sel && sel.value)) {
+      hint.textContent = '已从服务商读取到 ' + _fetchedModels.models.length + ' 个模型。';
+      return;
+    }
+    var cfg = providerCfg();
+    if (sel && sel.value === 'custom') {
+      hint.textContent = '自定义服务商需要手动输入模型名。';
+      return;
+    }
+    hint.textContent = cfg.models.length
+      ? '当前服务商预设 ' + cfg.models.length + ' 个模型' +
+        '（默认 ' + cfg.models[0] + '）。点「拉取列表」可读取该服务商全部可用模型。'
+      : '点「拉取列表」读取可用模型，或直接手输模型名。';
+  }
+
+  var _fetchedModels = null;
+
+  function syncProviderUi() {
+    var sel = document.getElementById('aiProvider');
     var row = document.getElementById('aiBaseCustomRow');
     if (!sel || !row) return;
     row.style.display = sel.value === 'custom' ? '' : 'none';
+    rebuildModelList();
   }
 
-  /// 取当前生效的 API 地址：自定义就用输入框，否则用下拉的值。
-  function currentBase() {
-    var sel = document.getElementById('aiBasePreset');
-    if (sel && sel.value !== 'custom') return sel.value;
-    return document.getElementById('aiBase').value.trim();
+  function restoreAiSettings() {
+    var sel = document.getElementById('aiProvider');
+    try {
+      var raw = localStorage.getItem(AI_STORE_KEY);
+      if (raw) {
+        var cfg = JSON.parse(raw);
+        if (cfg.provider && PROVIDERS[cfg.provider]) sel.value = cfg.provider;
+        if (cfg.base) document.getElementById('aiBase').value = cfg.base;
+        if (cfg.key) document.getElementById('aiKey').value = cfg.key;
+        if (cfg.remember === false) document.getElementById('aiRemember').checked = false;
+      }
+    } catch (e) { /* 配置坏了就当没有 */ }
+    syncProviderUi();
+    // 恢复上次选中的模型（必须在重建列表之后设，否则会被覆盖）
+    try {
+      var raw2 = localStorage.getItem(AI_STORE_KEY);
+      if (raw2) {
+        var c2 = JSON.parse(raw2);
+        if (c2.model) {
+          var ms = document.getElementById('aiModel');
+          if (Array.prototype.some.call(ms.options, function (o) { return o.value === c2.model; }))
+            ms.value = c2.model;
+        }
+      }
+    } catch (e) { }
   }
 
   function saveAiSettings() {
@@ -1093,9 +1218,11 @@
     try {
       if (remember && remember.checked) {
         localStorage.setItem(AI_STORE_KEY, JSON.stringify({
-          base: currentBase(),
-          model: document.getElementById('aiModel').value.trim(),
-          key: document.getElementById('aiKey').value.trim()
+          provider: document.getElementById('aiProvider').value,
+          base: document.getElementById('aiBase').value.trim(),
+          model: document.getElementById('aiModel').value,
+          key: document.getElementById('aiKey').value.trim(),
+          remember: true
         }));
       } else {
         localStorage.removeItem(AI_STORE_KEY);
@@ -1104,9 +1231,67 @@
   }
 
   function wireAiPanel(r) {
-    // 下拉切换：选预置服务商时隐藏自定义输入框
-    var preset = document.getElementById('aiBasePreset');
-    if (preset) preset.addEventListener('change', syncBasePreset);
+    // 换服务商
+    document.getElementById('aiProvider').addEventListener('change', function () {
+      _fetchedModels = null;
+      syncProviderUi();
+      saveAiSettings();
+    });
+
+    // 拉取模型列表
+    document.getElementById('btnFetchModels').addEventListener('click', function () {
+      var btn = this;
+      var key = document.getElementById('aiKey').value.trim();
+      var hint = document.getElementById('aiModelHint');
+      var providerId = document.getElementById('aiProvider').value;
+      var cfg = providerCfg();
+
+      if (providerId === 'custom') {
+        hint.textContent = '自定义服务商不支持自动拉取，请直接手输模型名。';
+        return;
+      }
+      if (!key) {
+        hint.textContent = '先填 API Key，再拉取模型列表。';
+        return;
+      }
+
+      btn.disabled = true;
+      hint.textContent = '正在读取模型列表…';
+
+      fetch(cfg.modelsBase, { headers: { 'Authorization': 'Bearer ' + key } })
+        .then(function (resp) {
+          return resp.text().then(function (text) {
+            if (!resp.ok) {
+              var msg = text;
+              try { msg = JSON.parse(text).error.message || text; } catch (e) { }
+              throw new Error('HTTP ' + resp.status + '：' + String(msg).slice(0, 200));
+            }
+            return text;
+          });
+        })
+        .then(function (text) {
+          var data = JSON.parse(text);
+          var arr = data.data || data.models || [];
+          var names = [];
+          for (var i = 0; i < arr.length; i++) {
+            var n = arr[i].id || arr[i].name;
+            if (n) names.push(n);
+          }
+          if (names.length === 0) throw new Error('返回里没有模型列表。');
+          names.sort();
+          _fetchedModels = { provider: providerId, models: names };
+          rebuildModelList();
+        })
+        .catch(function (err) {
+          var hint2 = document.getElementById('aiModelHint');
+          if (/Failed to fetch|NetworkError|Load failed/i.test(err.message)) {
+            hint2.textContent = '拉取失败：该服务商可能不允许浏览器直连（跨域限制）。可以手输模型名，下面有常用列表。';
+          } else {
+            hint2.textContent = '拉取失败：' + err.message;
+          }
+        })
+        .then(function () { btn.disabled = false; });
+    });
 
     // 复制按钮
     document.getElementById('btnCopyAi').addEventListener('click', function () {
@@ -1117,12 +1302,12 @@
     document.getElementById('btnAskAi').addEventListener('click', function () {
       var base = currentBase();
       var key = document.getElementById('aiKey').value.trim();
-      var model = document.getElementById('aiModel').value.trim();
+      var model = document.getElementById('aiModel').value;
       var out = document.getElementById('aiOutput');
 
       if (!base) { out.hidden = false; setAiOutput(out, 'err', '请先填写 API 地址。'); return; }
       if (!key) { out.hidden = false; setAiOutput(out, 'err', '请先填写 API Key。'); return; }
-      if (!model) { out.hidden = false; setAiOutput(out, 'err', '请先填写模型名。'); return; }
+      if (!model) { out.hidden = false; setAiOutput(out, 'err', '请先选择或填写模型名。'); return; }
 
       saveAiSettings();
       var prompt = buildAiPayload(r, inputsForCopy);
@@ -1132,8 +1317,6 @@
       this.disabled = true;
       var btn = this;
 
-      // OpenAI 兼容格式：{model, messages:[{role,content}]}
-      // DeepSeek / OpenAI / 通义 / 智谱 的 /chat/completions 都是这个形状。
       var body = {
         model: model,
         messages: [
@@ -1149,7 +1332,6 @@
       };
 
       var url = base;
-      // 只填域名时自动补全路径，省得用户记不住要写 /v1/chat/completions
       if (!/\/chat\/completions\/?$/.test(url)) {
         url = url.replace(/\/+$/, '');
         if (!/\/v\d+$/.test(url)) url += '/v1';
@@ -1171,7 +1353,6 @@
         .then(function (resp) {
           return resp.text().then(function (text) {
             if (!resp.ok) {
-              // 尽量把服务商的错误信息原样带出来，比「请求失败」有用得多
               var msg = text;
               try { msg = JSON.parse(text).error.message || text; } catch (e) { }
               throw new Error('HTTP ' + resp.status + '：' + String(msg).slice(0, 400));
@@ -1195,7 +1376,6 @@
           if (err.name === 'AbortError') {
             setAiOutput(out, 'err', '请求超时（120 秒）。可能是网络不通，或服务商响应过慢。');
           } else {
-            // 跨域被拦截时浏览器只给一个笼统的 Failed to fetch，这里补充说明
             var hint = /Failed to fetch|NetworkError|Load failed/i.test(err.message)
               ? '请求发不出去。常见原因：① 该服务商不允许浏览器直连（跨域限制），' +
                 '② 地址填错，③ 网络不通。可以先点「复制给 AI」手动粘贴。'
@@ -1221,7 +1401,6 @@
       el.textContent = text;
       return;
     }
-    // 成功：把纯文本按段落渲染，保留换行
     el.className = 'ai-output ok';
     el.textContent = '';
     var parts = String(text).split(/\n{2,}/);
