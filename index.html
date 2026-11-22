@@ -222,9 +222,10 @@
   .ai-row select:focus { outline: none; border-color: var(--blue); }
   .ai-row input:focus { outline: none; border-color: var(--blue); }
 
-  /* 模型行：下拉 + 拉取按钮并排 */
+  /* 模型行：输入框 + 拉取按钮并排 */
   .ai-model-box { display: flex; gap: 9px; align-items: stretch; }
-  .ai-model-box select { flex: 1; min-width: 0; }
+  .ai-model-box select,
+  .ai-model-box input[type="text"] { flex: 1; min-width: 0; }
   .mini-btn {
     flex: none; padding: 0 14px; border-radius: 9px; cursor: pointer;
     background: #1b2430; border: 1px solid var(--line);
@@ -896,13 +897,15 @@
       '<label class="ai-row">' +
       '<span>模型</span>' +
       '<div class="ai-model-box">' +
-      '<select id="aiModel"></select>' +
+      // 用 input + datalist：点箭头能选预设，同时可以直接打字输任意模型名。
+      // 用 <select> 就没法手输了，选「自定义」还得另起一行，多此一举。
+      '<input type="text" id="aiModel" spellcheck="false" list="aiModelList" ' +
+      'placeholder="直接输入模型名，或点右侧箭头选预设">' +
+      '<datalist id="aiModelList"></datalist>' +
       '<button class="mini-btn" id="btnFetchModels" type="button" title="填好 API Key 后点这里，拉取该服务商的可用模型">拉取列表</button>' +
       '</div>' +
       '</label>' +
-      '<div class="ai-model-hint" id="aiModelHint">' +
-      'DeepSeek-V4.1-Flash 是默认模型，日常排查够用。点「拉取列表」可读取该服务商全部可用模型。' +
-      '</div>' +
+      '<div class="ai-model-hint" id="aiModelHint"></div>' +
       '</div>' +
 
 
@@ -1122,38 +1125,29 @@
     return providerCfg().base;
   }
 
-  /// 换服务商时重建模型列表。
-  /// 关键点：切换后模型下拉里只剩新服务商的模型，不会出现「选了智谱却看到 deepseek-chat」。
+  /// 换服务商时重建模型候选列表（datalist）。
+  /// 用 datalist 而不是 select：既能点箭头从预设里挑，也能直接打字输任意模型名。
   function rebuildModelList(selectedValue) {
-    var sel = document.getElementById('aiModel');
+    var input = document.getElementById('aiModel');
+    var dl = document.getElementById('aiModelList');
     var cfg = providerCfg();
-    sel.innerHTML = '';
+    dl.innerHTML = '';
 
     var list = cfg.models.slice();
-    // 保留已拉取到的列表（拉取比硬编码准，服务商会增删模型）
     if (_fetchedModels && _fetchedModels.provider === document.getElementById('aiProvider').value)
       list = _fetchedModels.models.slice();
 
-    if (list.length === 0) {
-      var opt = document.createElement('option');
-      opt.value = '';
-      opt.textContent = '（自定义服务商，可手动输入）';
-      sel.appendChild(opt);
-    } else {
-      for (var i = 0; i < list.length; i++) {
-        var o = document.createElement('option');
-        o.value = list[i];
-        o.textContent = list[i];
-        sel.appendChild(o);
-      }
-      // 没有指定选中项时默认选第一个，避免下拉显示空白
-      if (!selectedValue || list.indexOf(selectedValue) < 0) sel.selectedIndex = 0;
+    for (var i = 0; i < list.length; i++) {
+      var o = document.createElement('option');
+      o.value = list[i];
+      dl.appendChild(o);
     }
 
-    if (selectedValue && list.indexOf(selectedValue) >= 0) sel.value = selectedValue;
+    // 有选中值就填进去；否则用该服务商第一个模型当默认，省得用户自己敲
+    if (selectedValue) input.value = selectedValue;
+    else if (list.length > 0) input.value = list[0];
+    else input.value = '';
 
-    // 自定义服务商允许手输：把下拉换成可编辑
-    sel.style.display = '';
     updateModelHint();
   }
 
@@ -1167,13 +1161,12 @@
     }
     var cfg = providerCfg();
     if (sel && sel.value === 'custom') {
-      hint.textContent = '自定义服务商需要手动输入模型名。';
+      hint.textContent = '自定义服务商：直接在这里输入模型名。';
       return;
     }
     hint.textContent = cfg.models.length
-      ? '当前服务商预设 ' + cfg.models.length + ' 个模型' +
-        '（默认 ' + cfg.models[0] + '）。点「拉取列表」可读取该服务商全部可用模型。'
-      : '点「拉取列表」读取可用模型，或直接手输模型名。';
+      ? '点右侧箭头可从 ' + cfg.models.length + ' 个预设里选，也可以直接打字输任意模型名。'
+      : '直接输入模型名；点「拉取列表」可读取该服务商的可用模型。';
   }
 
   var _fetchedModels = null;
@@ -1220,7 +1213,7 @@
         localStorage.setItem(AI_STORE_KEY, JSON.stringify({
           provider: document.getElementById('aiProvider').value,
           base: document.getElementById('aiBase').value.trim(),
-          model: document.getElementById('aiModel').value,
+          model: document.getElementById('aiModel').value.trim(),
           key: document.getElementById('aiKey').value.trim(),
           remember: true
         }));
@@ -1247,7 +1240,7 @@
       var cfg = providerCfg();
 
       if (providerId === 'custom') {
-        hint.textContent = '自定义服务商不支持自动拉取，请直接手输模型名。';
+        hint.textContent = '自定义服务商不支持自动拉取，直接输入模型名即可。';
         return;
       }
       if (!key) {
@@ -1302,7 +1295,7 @@
     document.getElementById('btnAskAi').addEventListener('click', function () {
       var base = currentBase();
       var key = document.getElementById('aiKey').value.trim();
-      var model = document.getElementById('aiModel').value;
+      var model = document.getElementById('aiModel').value.trim();
       var out = document.getElementById('aiOutput');
 
       if (!base) { out.hidden = false; setAiOutput(out, 'err', '请先填写 API 地址。'); return; }
