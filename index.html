@@ -416,7 +416,10 @@
     });
   }
 
-  fetch(API + '?per_page=8')
+  // 加 ?t= 时间戳绕过浏览器与 CDN 的缓存：发新版后官网要能立刻显示新版本，
+  // 而不是还挂着几小时前的列表。
+  // no-store 让 fetch 不写 HTTP 缓存，避免刚发的版本被旧响应顶掉。
+  fetch(API + '?per_page=8&t=' + Date.now(), { cache: 'no-store' })
     .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
     .then(function (list) {
       if (!Array.isArray(list) || list.length === 0) return;
@@ -440,8 +443,15 @@
 
       // 版本列表
       var html = '';
-      for (var k = 0; k < Math.min(list.length, 5); k++) {
-        var rel = list[k];
+      // 稳定版排前面：用户来这里首先想要能用的那版，测试版是补充信息。
+      // GitHub API 按创建时间倒序返回，刚发的测试版会排在稳定版前面，
+      // 不重排的话最新正式版会被挤到列表中间甚至第五位之外。
+      var ordered = [];
+      for (var s = 0; s < list.length; s++) if (!list[s].prerelease && !list[s].draft) ordered.push(list[s]);
+      for (var b = 0; b < list.length; b++) if (list[b].prerelease && !list[b].draft) ordered.push(list[b]);
+
+      for (var k = 0; k < Math.min(ordered.length, 5); k++) {
+        var rel = ordered[k];
         if (rel.draft) continue;
         var asset = null;
         for (var m = 0; m < rel.assets.length; m++) {
