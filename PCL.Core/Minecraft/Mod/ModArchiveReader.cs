@@ -163,31 +163,48 @@ public static class ModArchiveReader
 
         var lines = text.Replace("\r\n", "\n").Split('\n');
         var inDependencies = false;
+        // 单个 [[dependencies]] 块内的临时状态：modId 与 mandatory 可能分两行写，
+        // 必须等整块读完才能判断这条依赖要不要算进「必需前置」。
+        string? pendingDepId = null;
+        var pendingMandatory = true;
+
         foreach (var raw in lines)
         {
             var line = raw.Trim();
             if (line.Length == 0 || line.StartsWith('#')) continue;
+
             if (line.StartsWith("[[dependencies", StringComparison.OrdinalIgnoreCase))
             {
+                // 进入新块：先把上一块结算掉
+                FlushDependency();
                 inDependencies = true;
                 continue;
             }
 
             if (line.StartsWith('[') && !line.StartsWith("[["))
             {
+                FlushDependency();
                 inDependencies = false;
                 continue;
             }
 
             var (key, value) = SplitTomlKeyValue(line);
             if (key is null || value is null) continue;
+
             if (inDependencies)
             {
                 if (key.Equals("modId", StringComparison.OrdinalIgnoreCase))
                 {
-                    dependencies.Add(value);
-                    if (value.Equals("neoforge", StringComparison.OrdinalIgnoreCase)) platform = "neoforge";
-                    else if (value.Equals("forge", StringComparison.OrdinalIgnoreCase) && platform.Length == 0) platform = "forge";
+                    // 同一个块里若还出现新的 modId（理论上不会），先把上一条结算掉
+                    if (pendingDepId is not null) FlushDependency();
+                    pendingDepId = value;
+                    pendingMandatory = true;  // TOML 里 mandatory 缺省为 false，但多数模组会显式写；
+                                              // 这里按「缺省视为必需」保持与旧行为一致，避免漏报真正缺的前置
+                }
+                else if (key.Equals("mandatory", StringComparison.OrdinalIgnoreCase))
+                {
+                    pendingMandatory = !value.Equals("false", StringComparison.OrdinalIgnoreCase) &&
+                                       value != "0";
                 }
 
                 continue;
@@ -197,7 +214,26 @@ public static class ModArchiveReader
             else if (key.Equals("displayName", StringComparison.OrdinalIgnoreCase)) name ??= value;
         }
 
+        FlushDependency();
+
         return new ModArchiveMetadata(metadataName, platform, modId, name, dependencies);
+
+        // 结算一条依赖：只收 mandatory 的。
+        // optional 依赖（mandatory = false）装不装都能跑，算成缺失会产生成片误报——
+        // Forge 生态里大量模组把联动依赖写成 optional，旧实现全收进必需列表，
+        // 结果一个整合包能报出几十条「缺少前置」，用户根本分不清真假。
+        void FlushDependency()
+        {
+            if (pendingDepId is null) return;
+            if (pendingMandatory)
+            {
+                dependencies.Add(pendingDepId);
+                if (pendingDepId.Equals("neoforge", StringComparison.OrdinalIgnoreCase)) platform = "neoforge";
+                else if (pendingDepId.Equals("forge", StringComparison.OrdinalIgnoreCase) && platform.Length == 0) platform = "forge";
+            }
+            pendingDepId = null;
+            pendingMandatory = true;
+        }
     }
 
     private static (string? Key, string? Value) SplitTomlKeyValue(string line)

@@ -1478,6 +1478,15 @@ public partial class FormMain
         SetupLauncherMisc = 10,
         SetupLauncherLanguage = 11,
 
+        /// <summary>联机页左栏：我要当房主。数值与 PageLinkLeft 里的 Tag 对应。</summary>
+        LinkHost = 30,
+
+        /// <summary>联机页左栏：我要进房间。</summary>
+        LinkGuest = 31,
+
+        /// <summary>联机页左栏：陶瓦联机（IPv6 不通时的备用通路）。</summary>
+        LinkTerracotta = 32,
+
         ToolsTest = 3,
 
         /// <summary>
@@ -1919,10 +1928,13 @@ public partial class FormMain
                         PageChangeAnim(ModMain.frmDownloadLeft, (FrameworkElement)ModMain.frmDownloadLeft.PageGet(subType));
                         break;
                     }
-                case PageType.Link: // 联机（陶瓦面板）
+                case PageType.Link: // 联机（IPv6 直连 / 房主 / 房客）
                     {
                         ModMain.frmLinkLeft ??= new PageLinkLeft();
-                        ModMain.frmLinkRight ??= new PageLinkMain();
+                        ModMain.frmLinkRight ??= new PageLinkRight();
+                        ModMain.frmLinkRight.SetMode(subType == PageSubType.LinkGuest
+                            ? PageSubType.LinkGuest
+                            : PageSubType.LinkHost);
                         PageChangeAnim(ModMain.frmLinkLeft, ModMain.frmLinkRight);
                         break;
                     }

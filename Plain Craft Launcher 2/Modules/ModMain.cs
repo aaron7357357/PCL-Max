@@ -36,7 +36,8 @@ public static class ModMain
     public static PageSpeedRight? frmSpeedRight;
     public static PageToolsLeft? frmToolsLeft;
     public static PCL.Pages.PageLink.PageLinkLeft? frmLinkLeft;
-    public static PCL.Pages.PageLink.PageLinkMain? frmLinkRight;
+    public static PCL.Pages.PageLink.PageLinkRight? frmLinkRight;
+    public static PCL.Pages.PageLink.PageLinkTerracotta? frmLinkTerracotta;
     public static PageToolsTest? frmToolsTest;
     public static PageToolsImport? frmToolsImport;
     public static PageBedrockLeft? frmBedrockLeft;

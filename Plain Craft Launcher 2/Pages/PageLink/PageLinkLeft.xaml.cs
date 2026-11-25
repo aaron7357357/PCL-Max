@@ -1,137 +1,154 @@
-using System;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
-using PCL.Controls;
 using PCL.Core.App.Localization;
-using PCL.Core.IO.Net;
 
 namespace PCL.Pages.PageLink;
 
 public partial class PageLinkLeft
 {
+    public FormMain.PageSubType pageID = FormMain.PageSubType.LinkHost;
+    private bool _isUpdatingSelection;
+    private Brush? _brushReady;
+    private Brush? _brushIdle;
+
     public PageLinkLeft()
     {
         InitializeComponent();
-        Loaded += (_, _) => RefreshNetworkStatus();
+        AnimatedControl = PanItem;
+        Loaded += (_, _) =>
+        {
+            Select(pageID, false);
+            ModMain.frmLinkRight?.PushSidebarStatus();
+        };
     }
 
-    public int pageID
+    private void PageCheck(object sender, ModBase.RouteEventArgs e)
     {
-        get => 0;
-        set { }
+        if (_isUpdatingSelection) return;
+        if (sender is MyListItem { Tag: not null } item)
+            PageChange((FormMain.PageSubType)ModBase.Val(item.Tag));
     }
 
-    public FrameworkElement PageGet(FormMain.PageSubType subType)
+    public object PageGet(FormMain.PageSubType id)
     {
-        ModMain.frmLinkRight ??= new PageLinkMain();
+        // 陶瓦走另一套页面，剩下两种（房主 / 房客）共用 IPv6 直连页
+        if (id == FormMain.PageSubType.LinkTerracotta)
+        {
+            ModMain.frmLinkTerracotta ??= new PageLinkTerracotta();
+            return ModMain.frmLinkTerracotta;
+        }
+
+        ModMain.frmLinkRight ??= new PageLinkRight();
+        var normalized = id == FormMain.PageSubType.LinkGuest
+            ? FormMain.PageSubType.LinkGuest
+            : FormMain.PageSubType.LinkHost;
+        ModMain.frmLinkRight.SetMode(normalized);
         return ModMain.frmLinkRight;
     }
 
-    /// <summary>左栏单项被勾选：联机页只有一项，直接确保右侧内容就位。</summary>
-    private void PageCheck(object senderRaw, ModBase.RouteEventArgs e)
+    public void Select(FormMain.PageSubType id, bool animate)
     {
-        ModMain.frmLinkRight ??= new PageLinkMain();
-    }
-
-    private void BtnNetRefresh_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
-    {
-        RefreshNetworkStatus();
-    }
-
-    /// <summary>
-    ///     检测并展示本机 IPv6 可用性。
-    ///     <para>
-    ///         为什么关心这个：陶瓦（Terracotta）靠 EasyTier 建 P2P 连接，有公网 IPv6 时能直连打洞，
-    ///         没有就只能走中继，延迟和带宽都差一截。所以开房前先告诉用户当前处在哪种情况。
-    ///     </para>
-    ///     <para>
-    ///         检测本身复用 <see cref="NetworkInterfaceUtils.GetIPv6Status" />，但这里<b>不用它的返回值</b>：
-    ///         那个实现在「第一个没有 IPv6 地址的网卡」上就直接 return Unavailable，
-    ///         一台同时插着网线和 WiFi、或装了虚拟网卡的机器会被误判成「没有 IPv6」。
-    ///         这里自己遍历全部接口，任意一张有公网地址就算可用。
-    ///     </para>
-    /// </summary>
-    private void RefreshNetworkStatus()
-    {
+        var item = id switch
+        {
+            FormMain.PageSubType.LinkGuest => ItemGuest,
+            FormMain.PageSubType.LinkTerracotta => ItemTerracotta,
+            _ => ItemHost
+        };
+        if (item.Checked) return;
+        _isUpdatingSelection = true;
         try
         {
-            var status = DetectIPv6();
-            switch (status)
-            {
-                case NetworkInterfaceUtils.IPv6Status.Public:
-                    SetStatus("公网 IPv6 可用", "网络环境正常，可以直接开房或加房", true);
-                    break;
-                case NetworkInterfaceUtils.IPv6Status.RFC4193:
-                    SetStatus("仅内网 IPv6", "检测到局域网内 IPv6，公网直连可能失败，会退回中继", false);
-                    break;
-                case NetworkInterfaceUtils.IPv6Status.Unavailable:
-                    SetStatus("没有 IPv6", "将走陶瓦中继，速度取决于中继节点", false);
-                    break;
-                default:
-                    SetStatus("网络状态未知", "无法识别网络环境，仍可尝试开房", false);
-                    break;
-            }
+            item.SetChecked(true, animate, false);
         }
-        catch (Exception ex)
+        finally
         {
-            ModBase.Log(ex, "[Link] 检测 IPv6 失败", ModBase.LogLevel.Debug);
-            SetStatus("检测失败", "读取网络接口时出错，不影响联机", false);
+            _isUpdatingSelection = false;
         }
+    }
+
+    public void UpdateSidebarStatus(bool ready, string statusText, string detailText)
+    {
+        if (!CheckAccess())
+        {
+            Dispatcher.BeginInvoke(() => UpdateSidebarStatus(ready, statusText, detailText));
+            return;
+        }
+
+        _brushReady ??= (Brush)FindResource("ColorBrush3");
+        _brushIdle ??= (Brush)FindResource("ColorBrushGray4");
+        ShapeStatusDot.Fill = ready ? _brushReady : _brushIdle;
+        LabStatus.Text = statusText;
+        LabDetail.Text = detailText;
+    }
+
+    private void PageChange(FormMain.PageSubType id)
+    {
+        if (pageID == id) return;
+        Select(id, false);
+
+        // 已经在联机页时，左侧切换只需换右半边内容，但三种目标的右页不是同一个：
+        // IPv6 的房主/房客共用 PageLinkRight（靠 SetMode 切视图），
+        // 陶瓦是另一个页面，必须真正换 Content 而不是 SetMode。
+        if (ModMain.frmMain.pageCurrent.page == FormMain.PageType.Link)
+        {
+            pageID = id;
+            if (id == FormMain.PageSubType.LinkTerracotta)
+            {
+                ModMain.frmLinkTerracotta ??= new PageLinkTerracotta();
+                PageChangeRun(ModMain.frmLinkTerracotta);
+            }
+            else
+            {
+                ModMain.frmLinkRight ??= new PageLinkRight();
+                ModMain.frmLinkRight.SetMode(id);
+                PageChangeRun(ModMain.frmLinkRight);
+            }
+
+            return;
+        }
+
+        ModMain.frmMain.PageChange(FormMain.PageType.Link, id);
     }
 
     /// <summary>
-    ///     遍历所有物理网卡判断 IPv6 情况。
+    ///     把右半边换成指定页面，走和设置页同一套切换动画。
     ///     <para>
-    ///     忽略回环、隧道、VPN、虚拟机网卡——它们身上也会挂 IPv6 地址（比如 <c>::1</c> 或
-    ///     Hyper-V 的虚拟网段），算进来会把「其实没有公网 IPv6」误报成有。
+    ///     照抄 <c>PageSetupLeft.PageChangeRun</c>：直接改 Child 不触发 PageOnExit/PageOnEnter，
+    ///     陶瓦页的 Loaded 逻辑（读配置、起状态轮询）就不会跑，页面看起来是空的。
+    ///     动画里那两段延迟也照搬——第二段 <c>after: true</c> 保证它排在控件 Loaded 之后，
+    ///     否则 <c>PageOnEnter</c> 会在控件还没就绪时被调用。
     ///     </para>
     /// </summary>
-    private static NetworkInterfaceUtils.IPv6Status DetectIPv6()
+    private static void PageChangeRun(MyPageRight target)
     {
-        var sawAnyV6 = false;
-
-        foreach (var iface in NetworkInterfaceUtils.GetAvailableInterface())
+        ModAnimation.AniStop("FrmMain PageChangeRight");
+        if (target.Parent is not null)
+            target.SetValue(ContentPresenter.ContentProperty, null);
+        ModMain.frmMain.pageRight = target;
+        if (ModMain.frmMain.PanMainRight.Child is MyPageRight current)
+            current.PageOnExit();
+        ModAnimation.AniStart(new[]
         {
-            System.Net.NetworkInformation.UnicastIPAddressInformationCollection addresses;
-            try
+            ModAnimation.AaCode(() =>
             {
-                addresses = iface.GetIPProperties().UnicastAddresses;
-            }
-            catch
+                if (ModMain.frmMain.PanMainRight.Child is MyPageRight prev)
+                    prev.PageOnForceExit();
+                ModMain.frmMain.PanMainRight.Child = ModMain.frmMain.pageRight;
+                ModMain.frmMain.pageRight.Opacity = 0d;
+            }, 130),
+            ModAnimation.AaCode(() =>
             {
-                // 网卡在枚举过程中被拔掉 / 驱动异常时会抛，跳过这张继续看下一张
-                continue;
-            }
-
-            foreach (var info in addresses)
-            {
-                var ip = info.Address;
-                if (ip.AddressFamily != System.Net.Sockets.AddressFamily.InterNetworkV6) continue;
-
-                // 链路本地（fe80::/10）只在本网段有效，不能算「能用」
-                if (ip.IsIPv6LinkLocal) continue;
-
-                sawAnyV6 = true;
-
-                var bytes = ip.GetAddressBytes();
-                // 公网范围 2000::/3，即首字节 0x20–0x3F
-                if (bytes[0] >= 0x20 && bytes[0] <= 0x3F)
-                    return NetworkInterfaceUtils.IPv6Status.Public;
-            }
-        }
-
-        return sawAnyV6 ? NetworkInterfaceUtils.IPv6Status.RFC4193 : NetworkInterfaceUtils.IPv6Status.Unavailable;
+                ModMain.frmMain.pageRight.Opacity = 1d;
+                ModMain.frmMain.pageRight.PageOnEnter();
+            }, 30, true)
+        }, "PageLeft PageChange");
     }
 
-    private void SetStatus(string title, string description, bool good)
+    private void BtnRefreshNet_Click(object sender, MouseButtonEventArgs e)
     {
-        LabNetTitle.Text = title;
-        LabNetDesc.Text = description;
-
-        // 可用时用主题强调色，不可用时用灰色——不引入新的红色，
-        // 「没有 IPv6」只是速度慢一点，不是错误状态
-        ShapeNetDot.Fill = good
-            ? (Brush)FindResource("ColorBrush3")
-            : (Brush)FindResource("ColorBrushGray2");
+        ModMain.frmLinkRight ??= new PageLinkRight();
+        ModMain.frmLinkRight.RefreshIpv6ByUser();
     }
 }

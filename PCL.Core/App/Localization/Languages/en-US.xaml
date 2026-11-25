@@ -1892,30 +1892,11 @@
 
     <!-- Link -->
 
-    <sys:String x:Key="Link.Connection.Local">Local</sys:String>
-    <sys:String x:Key="Link.Connection.P2P">P2P</sys:String>
-    <sys:String x:Key="Link.Connection.Relay">Relay</sys:String>
-    <sys:String x:Key="Link.Connection.Unknown">Unknown</sys:String>
-    <sys:String x:Key="Link.Quality.Good">Good</sys:String>
-    <sys:String x:Key="Link.Quality.GoodDescription">The current network environment should not affect connection experience.&#xA;This environment is suitable as the lobby host.</sys:String>
-    <sys:String x:Key="Link.Quality.Normal">Normal</sys:String>
-    <sys:String x:Key="Link.Quality.NormalDescription">The current network environment may affect your connection experience.</sys:String>
-    <sys:String x:Key="Link.Quality.Poor">Poor</sys:String>
-    <sys:String x:Key="Link.Quality.PoorDescription">Some router and firewall settings may affect your connection experience.</sys:String>
 
     <!-- Link.Nat -->
 
     <!-- Link.Nat.Type -->
 
-    <sys:String x:Key="Link.Nat.Type.FullCone">Moderate (full cone)</sys:String>
-    <sys:String x:Key="Link.Nat.Type.Open">Open</sys:String>
-    <sys:String x:Key="Link.Nat.Type.PortRestricted">Moderate (port restricted)</sys:String>
-    <sys:String x:Key="Link.Nat.Type.Restricted">Moderate (restricted)</sys:String>
-    <sys:String x:Key="Link.Nat.Type.Symmetric">Strict (symmetric)</sys:String>
-    <sys:String x:Key="Link.Nat.Type.SymmetricEasy">Strict (loose symmetric)</sys:String>
-    <sys:String x:Key="Link.Nat.Type.SymmetricFirewall">Strict (symmetric firewall)</sys:String>
-    <sys:String x:Key="Link.Nat.Type.UdpBlocked">Strict (UDP blocked)</sys:String>
-    <sys:String x:Key="Link.Nat.Type.Unknown">Unknown</sys:String>
 
     <!-- LogPage -->
 
@@ -3974,4 +3955,80 @@ Lunar session expired at {2}; renewed over IPC in game</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Quality.Hint">Scales desktop sample dimensions proportionally. 100% keeps native resolution; 50% halves width and height, yielding one quarter of the pixels. Lower values reduce frame transfer and upload size with less detail; Windows capture still retains a full-size intermediate. Only affects live desktop detail, not text, animation or capture rate.</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.Brightness">Glass brightness (-50 to 50; default 0)</sys:String>
     <sys:String x:Key="Setup.Ui.LiquidGlass.CardBrightness">Card brightness (-50 to 50; default 0)</sys:String>
+    <sys:String x:Key="Link.Connection.Local">Local</sys:String>
+    <sys:String x:Key="Link.Connection.P2P">P2P</sys:String>
+    <sys:String x:Key="Link.Connection.Relay">Relay</sys:String>
+    <sys:String x:Key="Link.Connection.Unknown">Unknown</sys:String>
+    <sys:String x:Key="Link.Quality.Good">Good</sys:String>
+    <sys:String x:Key="Link.Quality.GoodDescription">The current network environment should not affect connection experience.&#xA;This environment is suitable as the lobby host.</sys:String>
+    <sys:String x:Key="Link.Quality.Normal">Normal</sys:String>
+    <sys:String x:Key="Link.Quality.NormalDescription">The current network environment may affect your connection experience.</sys:String>
+    <sys:String x:Key="Link.Quality.Poor">Poor</sys:String>
+    <sys:String x:Key="Link.Quality.PoorDescription">Some router and firewall settings may affect your connection experience.</sys:String>
+    <sys:String x:Key="Link.Nat.Type.FullCone">Moderate (full cone)</sys:String>
+    <sys:String x:Key="Link.Nat.Type.Open">Open</sys:String>
+    <sys:String x:Key="Link.Nat.Type.PortRestricted">Moderate (port restricted)</sys:String>
+    <sys:String x:Key="Link.Nat.Type.Restricted">Moderate (restricted)</sys:String>
+    <sys:String x:Key="Link.Nat.Type.Symmetric">Strict (symmetric)</sys:String>
+    <sys:String x:Key="Link.Nat.Type.SymmetricEasy">Strict (loose symmetric)</sys:String>
+    <sys:String x:Key="Link.Nat.Type.SymmetricFirewall">Strict (symmetric firewall)</sys:String>
+    <sys:String x:Key="Link.Nat.Type.UdpBlocked">Strict (UDP blocked)</sys:String>
+    <sys:String x:Key="Link.Nat.Type.Unknown">Unknown</sys:String>
+<sys:String x:Key="Link.Guest.ConnectBtn">Connect</sys:String>
+<sys:String x:Key="Link.Guest.ConnectionLost">Connection to the host was lost. Disconnect and join the room again.</sys:String>
+<sys:String x:Key="Link.Host.PortPlaceholder">Port (e.g. 25565)</sys:String>
+<sys:String x:Key="Link.Left.Detecting">Checking IPv6…</sys:String>
+<sys:String x:Key="Link.Left.Guest">Join a Room</sys:String>
+<sys:String x:Key="Link.Left.Host">Host a Room</sys:String>
+<sys:String x:Key="Link.Left.TerracottaCategory">Other methods</sys:String>
+<sys:String x:Key="Link.Left.Terracotta">Terracotta</sys:String>
+<sys:String x:Key="Link.Left.StatusTitle">Status</sys:String>
+<sys:String x:Key="Link.Sidebar.GuestDisconnected">Host connection lost</sys:String>
+<sys:String x:Key="Link.Sidebar.GuestDisconnectedDetail">Reconnect to join the room again</sys:String>
+<sys:String x:Key="Link.Sidebar.Ipv6ReadyDetail">Network ready for hosting or joining</sys:String>
+<sys:String x:Key="Link.Sidebar.NoIpv6">No public IPv6</sys:String>
+<sys:String x:Key="Link.Sidebar.NoIpv6Detail">Some routers or campus Wi-Fi disable IPv6; mobile hotspots usually work.</sys:String>
+    <sys:String x:Key="Link.Left.Category">Multiplayer</sys:String>
+    <sys:String x:Key="Link.Left.Direct">IPv6 direct</sys:String>
+    <sys:String x:Key="Link.Left.Tip">Fastest when both sides have a public IPv6 address, with no relay. The host opens a room and shares the invite code.</sys:String>
+        <sys:String x:Key="Link.Env.NoIpv6Desc">Direct link runs over IPv6 without a relay server. Enable IPv6 on your router or switch to a 5G hotspot, then re-check.</sys:String>
+        <sys:String x:Key="Link.Env.NoIpv6Title">No public IPv6 address found</sys:String>
+        <sys:String x:Key="Link.Left.RefreshNet">Re-check Network</sys:String>
+        <sys:String x:Key="Link.Sidebar.Ipv6Ready">Public IPv6 ready</sys:String>
+        <sys:String x:Key="Link.Sidebar.HostRunning">Host active</sys:String>
+        <sys:String x:Key="Link.Sidebar.HostPeersCount">{0} connected · Port {1}</sys:String>
+        <sys:String x:Key="Link.Sidebar.HostWaiting">Waiting for friends · Port {0}</sys:String>
+        <sys:String x:Key="Link.Sidebar.GuestConnected">Connected to host</sys:String>
+        <sys:String x:Key="Link.Sidebar.GuestConnecting">Connecting to host…</sys:String>
+        <sys:String x:Key="Link.Host.Step1Title">1. Open Room &amp; Share Invite</sys:String>
+        <sys:String x:Key="Link.Host.LanWaiting">Click "Open to LAN" inside your world to fill the port automatically, or type a server port.</sys:String>
+        <sys:String x:Key="Link.Host.PortLabel">Game port:</sys:String>
+        <sys:String x:Key="Link.Host.StartBtn">Start Room &amp; Copy Invite</sys:String>
+        <sys:String x:Key="Link.Host.StopBtn">Close Room</sys:String>
+        <sys:String x:Key="Link.Host.InviteHint">Invite code copied automatically — send it to your friends:</sys:String>
+        <sys:String x:Key="Link.Host.CopyAgain">Copy Again</sys:String>
+        <sys:String x:Key="Link.Host.Step2Title">2. Allow a Friend (Skip if already connected)</sys:String>
+        <sys:String x:Key="Link.Host.AckDesc">If your friend connected right away, skip this. If their screen shows an ACK6- code, ask them to send it here and click Paste &amp; Allow:</sys:String>
+        <sys:String x:Key="Link.Host.AckPlaceholder">Copy friend's ACK6- code and click the button to paste &amp; allow</sys:String>
+        <sys:String x:Key="Link.Host.PasteAndAccept">Paste &amp; Allow</sys:String>
+        <sys:String x:Key="Link.Host.PeersTitle">Friends in Room</sys:String>
+        <sys:String x:Key="Link.Host.NoPeers">No friends connected yet.</sys:String>
+    <sys:String x:Key="Link.Host.LanCaptured">Detected LAN world "{0}" on port {1}</sys:String>
+    <sys:String x:Key="Link.Host.LanHint">Open the world to LAN and the port fills in automatically.</sys:String>
+    <sys:String x:Key="Link.Host.DisconnectPeer">Disconnect</sys:String>
+    <sys:String x:Key="Link.Host.PeerConnected">Connected</sys:String>
+    <sys:String x:Key="Link.Host.PeerPunching">Hole punching</sys:String>
+        <sys:String x:Key="Link.Guest.Step1Title">1. Enter Host Invite</sys:String>
+        <sys:String x:Key="Link.Guest.InviteHint">Copy the PCL6- invite code from your friend and click Paste &amp; Connect:</sys:String>
+        <sys:String x:Key="Link.Guest.InvitePlaceholder">Click the button to read PCL6- from clipboard automatically</sys:String>
+        <sys:String x:Key="Link.Guest.PasteAndConnect">Paste &amp; Connect</sys:String>
+        <sys:String x:Key="Link.Guest.DisconnectBtn">Disconnect</sys:String>
+        <sys:String x:Key="Link.Guest.Step2Title">2. Join Game</sys:String>
+        <sys:String x:Key="Link.Guest.Connecting">Trying to reach host directly…</sys:String>
+        <sys:String x:Key="Link.Guest.NeedAckStatus">Blocked by host's firewall — your ACK6- code below was copied automatically. Send it to the host and keep this page open:</sys:String>
+        <sys:String x:Key="Link.Guest.ConnectedStatus">Connected ({0} ms)! Open Multiplayer in Minecraft and look at the bottom of the list.</sys:String>
+        <sys:String x:Key="Link.Guest.AckExplain">Your ack code (ACK6-...):</sys:String>
+        <sys:String x:Key="Link.Guest.CopyAck">Copy Ack</sys:String>
+        <sys:String x:Key="Link.Guest.FallbackAddrHint">If the LAN entry doesn't show up, use Direct Connection with this address:</sys:String>
+        <sys:String x:Key="Link.Guest.CopyAddr">Copy Address</sys:String>
 </ResourceDictionary>
