@@ -267,6 +267,72 @@
   .ai-output.ok p { margin: 0 0 12px; }
   .ai-output.ok p:last-child { margin-bottom: 0; }
 
+  /* ── 更新日志 ── */
+  .changelog { display: flex; flex-direction: column; gap: 16px; }
+
+  .cl-item {
+    padding: 22px 26px; border-radius: 13px;
+    background: var(--card); border: 1px solid var(--line);
+  }
+  .cl-head {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    padding-bottom: 14px; margin-bottom: 16px;
+    border-bottom: 1px solid var(--line);
+  }
+  .cl-ver {
+    font-size: 19px; font-weight: 700; letter-spacing: -.2px;
+    font-family: Consolas, "Cascadia Mono", monospace;
+  }
+  .cl-tag {
+    font-size: 11.5px; padding: 2px 8px; border-radius: 5px; font-weight: 600;
+    background: rgba(63,185,80,.14); color: var(--green);
+    border: 1px solid rgba(63,185,80,.3);
+  }
+  .cl-tag.beta {
+    background: rgba(210,153,34,.14); color: #d29922;
+    border-color: rgba(210,153,34,.3);
+  }
+  .cl-date { margin-left: auto; font-size: 13px; color: #6b788b; }
+
+  .cl-item h4 {
+    margin: 16px 0 8px; font-size: 14.5px; font-weight: 650; color: #a8c4e8;
+  }
+  .cl-item h4:first-of-type { margin-top: 0; }
+  .cl-item ul { margin: 0; padding-left: 20px; }
+  .cl-item li {
+    margin-bottom: 7px; font-size: 14px; line-height: 1.75;
+    color: var(--dim);
+  }
+  .cl-item li:last-child { margin-bottom: 0; }
+  .cl-item li strong { color: var(--fg); font-weight: 600; }
+  .cl-item code {
+    font-family: Consolas, "Cascadia Mono", monospace; font-size: 12.5px;
+    background: #0d1117; padding: 1px 5px; border-radius: 4px; color: #a5b4c8;
+  }
+
+  /* 模板折叠区 */
+  .cl-template {
+    margin-top: 18px; border-radius: 13px;
+    background: #12171f; border: 1px solid var(--line); overflow: hidden;
+  }
+  .cl-template summary {
+    padding: 15px 22px; cursor: pointer; font-size: 14px; font-weight: 500;
+    color: var(--dim); user-select: none;
+  }
+  .cl-template summary:hover { color: var(--fg); }
+  .cl-template[open] summary { border-bottom: 1px solid var(--line); }
+  .cl-tpl-note {
+    margin: 0; padding: 14px 22px 0; font-size: 13px; line-height: 1.85; color: #6b788b;
+  }
+  .cl-pre {
+    margin: 12px 22px 20px; padding: 16px 18px; border-radius: 9px;
+    background: #0d1117; border: 1px solid var(--line);
+    font-family: Consolas, "Cascadia Mono", monospace;
+    font-size: 12.5px; line-height: 1.8; color: #8b98ab;
+    white-space: pre-wrap; word-break: break-word;
+    max-height: 460px; overflow-y: auto;
+  }
+
   /* ── 页脚 ── */
   footer {
     padding: 44px 0 56px; border-top: 1px solid var(--line);
@@ -338,6 +404,103 @@
         <span>正在读取版本信息…</span>
       </div>
     </div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <h2>更新日志</h2>
+    <p class="sub">按版本倒序。发布公告也可以从这里的格式直接套。</p>
+
+    <div class="changelog">
+
+      <article class="cl-item">
+        <div class="cl-head">
+          <span class="cl-ver">0.3.1</span>
+          <span class="cl-tag">正式版</span>
+          <span class="cl-date">2026.11.25</span>
+        </div>
+
+        <h4>联机页重做</h4>
+        <ul>
+          <li><strong>IPv6 直连（新）</strong>：无需第三方服务器。房主建房发邀请码，房客填入后回传确认码，
+            游戏里填生成的代理地址。需双方都有公网 IPv6。</li>
+          <li><strong>陶瓦联机（旧）</strong>：IPv6 不通时可在「其他方式」里选用。</li>
+        </ul>
+
+        <h4>修复与优化</h4>
+        <ul>
+          <li><strong>依赖误报</strong>：Forge 可选项（<code>mandatory = false</code>）被误认为必需前置，误报大幅减少。</li>
+          <li><strong>GPU 不显示</strong>：主页性能卡的 GPU 占用一直为空，已修。</li>
+          <li><strong>启动卡顿</strong>：硬件查询改后台执行，阻塞从 1.04 秒降至 0.026 秒。</li>
+          <li><strong>界面不换页</strong>：联机页点「陶瓦联机」时右半侧不刷新，已修。</li>
+        </ul>
+
+        <h4>注意</h4>
+        <ul>
+          <li>单文件版首次启动解压至 <code>%TEMP%\.net\</code>，报错时可手动清理该目录。</li>
+          <li>上游整合包更新尚未做全量验证。</li>
+        </ul>
+      </article>
+
+      <article class="cl-item">
+        <div class="cl-head">
+          <span class="cl-ver">0.3.0</span>
+          <span class="cl-tag">正式版</span>
+          <span class="cl-date">2026.11.16</span>
+        </div>
+
+        <h4>底座重建</h4>
+        <ul>
+          <li>整个项目改为在 PCL_Plus 4.0.1 源码上继续开发，不再往老 exe 里注入代码。</li>
+          <li>换底座之后可以用上 .NET 10 的 WPF 特性，之前卡住的液态玻璃有了实现条件。</li>
+          <li>自绘 M 图标，标题栏显示 PCL_Max 文字。</li>
+        </ul>
+
+        <h4>修复</h4>
+        <ul>
+          <li>反馈 / 软件信息 / 查看日志 / 管理四页点开即报「未知的设置子页面种类」，已全部恢复。</li>
+          <li>检查更新一直失败——更新源指向了不存在的仓库，仓库名还写成了下划线。</li>
+          <li>主页性能条 CPU 跑满时只走到三分之一，改为按进度槽真实宽度换算。</li>
+          <li>WebP 明明系统支持却提示缺失，改为检查系统解码器与 libwebp.dll。</li>
+        </ul>
+      </article>
+
+    </div>
+
+    <details class="cl-template">
+      <summary>发布公告模板（写群公告时照这个套）</summary>
+      <p class="cl-tpl-note">
+        结构固定五段：下载 / 功能 / 修复 / 升级注意 / 反馈。<br>
+        下载段官网与直链都给——两者都可能被网络环境影响，多给一条路。<br>
+        修复效果用定性描述（「误报大幅减少」），不抛内部测试数字，省得被追问剩下的部分。<br>
+        已知问题压成一句带过。总字数控制在 600 以内（QQ 群公告硬限制）。
+      </p>
+      <pre class="cl-pre">PCL_Max 0.3.1 正式版更新 (2026.11.25)
+
+【下载与官网】
+官网: https://aaron7357357.github.io/PCL-Max/
+下载: https://github.com/aaron7357357/PCL-Max/releases/download/v0.3.1/PCL_Max_v0.3.1_x64.exe
+（单文件免安装，需.NET 10）
+
+【联机页重做】
+1.IPv6直连(新)：无需第三方服务器，房主建房发邀请码，房客填入后回传确认码，游戏内填生成的代理地址。需双方有公网IPv6。
+2.陶瓦联机(旧)：IPv6不通时可在"其他方式"选用。
+
+【修复与优化】
+1.依赖误报：修复Forge可选依赖(mandatory=false)被误认为必需的问题，误报大幅减少。
+2.GPU不显示：修复主页性能卡GPU占用一直为空的问题。
+3.启动卡顿：硬件查询改后台执行，阻塞从1.04秒降至0.026秒。
+4.界面不换页：修复联机页点"陶瓦联机"右半侧不刷新问题。
+
+【升级与注意】
+升级：0.3.0用户在设置→软件更新中检查即可。
+注意：单文件版首次启动解压至%TEMP%.net\，报错可手动清理。上游整合包更新未做全量验证。
+
+【反馈】
+群:1135547472。报Bug请附版本号及Launch-*.log日志，可先用官网日志分析工具排查。</pre>
+    </details>
+
   </div>
 </section>
 
